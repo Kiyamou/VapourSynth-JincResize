@@ -1,7 +1,7 @@
-﻿#include <cstdio>
-#include <cstdlib>
+﻿#include <cstdlib>
 #include <cmath>
-#include <cstdint>
+#include <algorithm>
+
 #include <VapourSynth.h>
 #include <VSHelper.h>
 
@@ -71,9 +71,9 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 				double rpm_x = (x + 0.5) * (iw) / (ow);
 				double rpm_y = (y + 0.5) * (ih) / (oh);
 				// who cares about border handling anyway ヽ( ﾟヮ・)ノ
-				int window_x_lower = (int)MAX(ceil(rpm_x - d->radius + 0.5) - 1, 0.0);
+				int window_x_lower = (int)std::max(ceil(rpm_x - d->radius + 0.5) - 1, 0.0);
 				int window_x_upper = (int)MIN(floor(rpm_x + d->radius + 0.5) - 1, iw - 1);
-				int window_y_lower = (int)MAX(ceil(rpm_y - d->radius + 0.5) - 1, 0.0);
+				int window_y_lower = (int)std::max(ceil(rpm_y - d->radius + 0.5) - 1, 0.0);
 				int window_y_upper = (int)MIN(floor(rpm_y + d->radius + 0.5) - 1, ih - 1);
 				double pixel = 0;
 				double normalizer = 0;
@@ -152,7 +152,7 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 		d.blur = 0.9812505644269356;
 
 	if (d.w / d.vi->width < 1 || d.h / d.vi->height < 1) {
-		double scale = MIN((double)d.vi->width / d.w, (double)d.vi->height / d.h); // an ellipse would be :effort:
+		double scale = std::min((double)d.vi->width / d.w, (double)d.vi->height / d.h); // an ellipse would be :effort:
 		d.radius = d.radius * scale;
 		d.blur = d.blur * scale;
 	}
@@ -169,6 +169,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 
 	data = (FilterData*)malloc(sizeof(d));
 	*data = d;
+
+	//FilterData* data = new FilterData{ d };  // no help for speed
 
 	vsapi->createFilter(in, out, "Lanczos", filterInit, filterGetFrame, filterFree, fmParallel, 0, data, core);
 }
