@@ -140,34 +140,45 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 	d->h = (int)vsapi->propGetInt(in, "h", 0, &err);
 
 	//probably add an RGB check because subpixel shifting is :effort:
+	try {
+		if (!isConstantFormat(d->vi) ||
+			(d->vi->format->sampleType == stInteger && d->vi->format->bitsPerSample > 16) ||
+			d->vi->format->sampleType == stFloat)
+			throw std::string{ "only constant format 8-16 bit integer input supported" };
 
-	d->antiring = (int)vsapi->propGetInt(in, "antiring", 0, &err);
-	if (err)
-		d->antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ
+		d->antiring = (int)vsapi->propGetInt(in, "antiring", 0, &err);
+		if (err)
+			d->antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ
 
-	d->radius = vsapi->propGetFloat(in, "radius", 0, &err);
-	if (err)
-		d->radius = 3.2383154841662362;
+		d->radius = vsapi->propGetFloat(in, "radius", 0, &err);
+		if (err)
+			d->radius = 3.2383154841662362;
 
-	d->blur = vsapi->propGetFloat(in, "blur", 0, &err);
-	if (err)
-		d->blur = 0.9812505644269356;
+		d->blur = vsapi->propGetFloat(in, "blur", 0, &err);
+		if (err)
+			d->blur = 0.9812505644269356;
 
-	if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1) {
-		double scale = std::min((double)d->vi->width / d->w, (double)d->vi->height / d->h); // an ellipse would be :effort:
-		d->radius = d->radius * scale;
-		d->blur = d->blur * scale;
+		if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1) {
+			double scale = std::min((double)d->vi->width / d->w, (double)d->vi->height / d->h); // an ellipse would be :effort:
+			d->radius = d->radius * scale;
+			d->blur = d->blur * scale;
+		}
+
+		d->samples = 1000;
+
+		double* lut = reinterpret_cast<double*>(malloc(sizeof(double) * d->samples));
+		for (int i = 0; i < d->samples; ++i) {
+			double filter = sample(jinc, d->radius * sqrt((double)i / (d->samples - 1)), d->blur, d->radius); // saving the sqrt during filtering
+			double window = sample(jinc, JINC_ZERO * sqrt((double)i / (d->samples - 1)), 1, d->radius);
+			lut[i] = filter * window;
+		}
+		d->lut = lut;
 	}
-
-	d->samples = 1000;
-
-	double* lut = reinterpret_cast<double*>(malloc(sizeof(double) * d->samples));
-	for (int i = 0; i < d->samples; ++i) {
-		double filter = sample(jinc, d->radius * sqrt((double)i / (d->samples - 1)), d->blur, d->radius); // saving the sqrt during filtering
-		double window = sample(jinc, JINC_ZERO * sqrt((double)i / (d->samples - 1)), 1, d->radius);
-		lut[i] = filter * window;
+	catch (const std::string& error) {
+		vsapi->setError(out, ("JincResize:" + error).c_str());
+		vsapi->freeNode(d->node);
+		return;
 	}
-	d->lut = lut;
 
 	vsapi->createFilter(in, out, "Lanczos", filterInit, filterGetFrame, filterFree, fmParallel, 0, d.release(), core);
 }
