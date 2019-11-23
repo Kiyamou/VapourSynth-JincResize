@@ -1,6 +1,9 @@
 ﻿#include <cstdlib>
 #include <cmath>
 #include <algorithm>
+#include <string>
+
+#include <memory>
 
 #include <VapourSynth.h>
 #include <VSHelper.h>
@@ -128,51 +131,45 @@ static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsap
 }
 
 static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCore* core, const VSAPI* vsapi) {
-	FilterData d;
-	FilterData* data;
+	std::unique_ptr<FilterData> d = std::make_unique<FilterData>();
 	int err;
 
-	d.node = vsapi->propGetNode(in, "clip", 0, 0);
-	d.vi = vsapi->getVideoInfo(d.node);
-	d.w = (int)vsapi->propGetInt(in, "w", 0, &err);
-	d.h = (int)vsapi->propGetInt(in, "h", 0, &err);
+	d->node = vsapi->propGetNode(in, "clip", 0, 0);
+	d->vi = vsapi->getVideoInfo(d->node);
+	d->w = (int)vsapi->propGetInt(in, "w", 0, &err);
+	d->h = (int)vsapi->propGetInt(in, "h", 0, &err);
 
 	//probably add an RGB check because subpixel shifting is :effort:
 
-	d.antiring = (int)vsapi->propGetInt(in, "antiring", 0, &err);
+	d->antiring = (int)vsapi->propGetInt(in, "antiring", 0, &err);
 	if (err)
-		d.antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ
+		d->antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ
 
-	d.radius = vsapi->propGetFloat(in, "radius", 0, &err);
+	d->radius = vsapi->propGetFloat(in, "radius", 0, &err);
 	if (err)
-		d.radius = 3.2383154841662362;
+		d->radius = 3.2383154841662362;
 
-	d.blur = vsapi->propGetFloat(in, "blur", 0, &err);
+	d->blur = vsapi->propGetFloat(in, "blur", 0, &err);
 	if (err)
-		d.blur = 0.9812505644269356;
+		d->blur = 0.9812505644269356;
 
-	if (d.w / d.vi->width < 1 || d.h / d.vi->height < 1) {
-		double scale = std::min((double)d.vi->width / d.w, (double)d.vi->height / d.h); // an ellipse would be :effort:
-		d.radius = d.radius * scale;
-		d.blur = d.blur * scale;
+	if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1) {
+		double scale = std::min((double)d->vi->width / d->w, (double)d->vi->height / d->h); // an ellipse would be :effort:
+		d->radius = d->radius * scale;
+		d->blur = d->blur * scale;
 	}
 
-	d.samples = 1000;
+	d->samples = 1000;
 
-	double* lut = (double*)malloc(sizeof(double) * d.samples);
-	for (int i = 0; i < d.samples; ++i) {
-		double filter = sample(jinc, d.radius * sqrt((double)i / (d.samples - 1)), d.blur, d.radius); // saving the sqrt during filtering
-		double window = sample(jinc, JINC_ZERO * sqrt((double)i / (d.samples - 1)), 1, d.radius);
+	double* lut = (double*)malloc(sizeof(double) * d->samples);
+	for (int i = 0; i < d->samples; ++i) {
+		double filter = sample(jinc, d->radius * sqrt((double)i / (d->samples - 1)), d->blur, d->radius); // saving the sqrt during filtering
+		double window = sample(jinc, JINC_ZERO * sqrt((double)i / (d->samples - 1)), 1, d->radius);
 		lut[i] = filter * window;
 	}
-	d.lut = lut;
+	d->lut = lut;
 
-	data = (FilterData*)malloc(sizeof(d));
-	*data = d;
-
-	//FilterData* data = new FilterData{ d };  // no help for speed
-
-	vsapi->createFilter(in, out, "Lanczos", filterInit, filterGetFrame, filterFree, fmParallel, 0, data, core);
+	vsapi->createFilter(in, out, "Lanczos", filterInit, filterGetFrame, filterFree, fmParallel, 0, d.release(), core);
 }
 
 //////////////////////////////////////////
