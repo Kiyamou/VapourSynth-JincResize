@@ -26,7 +26,7 @@ typedef struct {
 } FilterData;
 
 static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode* node, VSCore* core, const VSAPI* vsapi) {
-	FilterData* d = (FilterData*)* instanceData;
+	FilterData* d = static_cast<FilterData*>(*instanceData);
 	VSVideoInfo new_vi = (VSVideoInfo) * (d->vi);
 	new_vi.width = d->w;
 	new_vi.height = d->h;
@@ -101,7 +101,7 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 }
 
 static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void** instanceData, void** frameData, VSFrameContext* frameCtx, VSCore* core, const VSAPI* vsapi) {
-	FilterData* d = (FilterData*)* instanceData;
+	const FilterData* d = static_cast<const FilterData*>(*instanceData);
 
 	if (activationReason == arInitial) {
 		vsapi->requestFrameFilter(n, d->node, frameCtx);
@@ -124,10 +124,10 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 }
 
 static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsapi) {
-	FilterData* d = (FilterData*)instanceData;
+	FilterData* d = static_cast<FilterData*>(instanceData);
 	vsapi->freeNode(d->node);
-	free(d->lut);
-	free(d);
+	free(d->lut);  // I don't konw it's necessary or not. lut is created by malloc, so using free?
+	delete d;      // I don't know the difference between delete and free
 }
 
 static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCore* core, const VSAPI* vsapi) {
@@ -161,7 +161,7 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 
 	d->samples = 1000;
 
-	double* lut = (double*)malloc(sizeof(double) * d->samples);
+	double* lut = reinterpret_cast<double*>(malloc(sizeof(double) * d->samples));
 	for (int i = 0; i < d->samples; ++i) {
 		double filter = sample(jinc, d->radius * sqrt((double)i / (d->samples - 1)), d->blur, d->radius); // saving the sqrt during filtering
 		double window = sample(jinc, JINC_ZERO * sqrt((double)i / (d->samples - 1)), 1, d->radius);
