@@ -5,8 +5,8 @@
 
 #include <memory>
 
-#include <VapourSynth.h>
-#include <VSHelper.h>
+#include "VapourSynth.h"
+#include "VSHelper.h"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -126,8 +126,8 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsapi) {
 	FilterData* d = static_cast<FilterData*>(instanceData);
 	vsapi->freeNode(d->node);
-	free(d->lut);  // I don't konw it's necessary or not. lut is created by malloc, so using free?
-	delete d;      // I don't know the difference between delete and free
+	delete d->lut; // I don't konw it's necessary or not.
+	delete d;
 }
 
 static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCore* core, const VSAPI* vsapi) {

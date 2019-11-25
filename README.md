@@ -4,7 +4,7 @@ JincResize works by Jinc algorithms (EWA Lanczos).
 
 Modified from EWA-Resampling-VS:  https://github.com/Lypheo/EWA-Resampling-VS . Added the 8bit support.
 
-I'm a beginner for C++. The plugin is very slow now (slower than the original version). I will try to modify in the future.
+I'm a beginner for C++. The plugin needs improvement. I will try to modify in the future.
 
 # Usage
 
@@ -13,6 +13,14 @@ core.ewa.Lanczos(clip clip, int width, int height, float radius, float blur)
 ```
 
 * clip: Clip to process,  integer sample type of 8-16 bit depth is supported.
+
+# Compilation
+
+The currently released dynamic link library is compiled in the following way.
+
+```
+x86_64-w64-mingw32-g++ -shared -o JincResize.dll -O2 -static JincResize.cpp
+```
 
 # Acknowledgement
 
