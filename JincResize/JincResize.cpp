@@ -8,8 +8,6 @@
 #include "VapourSynth.h"
 #include "VSHelper.h"
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
 #define JINC_ZERO 1.2196698912665045
 #define M_PI      3.14159265358979323846
 
@@ -75,9 +73,9 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 				double rpm_y = (y + 0.5) * (ih) / (oh);
 				// who cares about border handling anyway ヽ( ﾟヮ・)ノ
 				int window_x_lower = (int)std::max(ceil(rpm_x - d->radius + 0.5) - 1, 0.0);
-				int window_x_upper = (int)MIN(floor(rpm_x + d->radius + 0.5) - 1, iw - 1);
+				int window_x_upper = (int)std::min(floor(rpm_x + d->radius + 0.5) - 1, iw - 1.0);
 				int window_y_lower = (int)std::max(ceil(rpm_y - d->radius + 0.5) - 1, 0.0);
-				int window_y_upper = (int)MIN(floor(rpm_y + d->radius + 0.5) - 1, ih - 1);
+				int window_y_upper = (int)std::min(floor(rpm_y + d->radius + 0.5) - 1, ih - 1.0);
 				double pixel = 0;
 				double normalizer = 0;
 
@@ -92,7 +90,7 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 						pixel += weight * src_value;
 					}
 				}
-				pixel = MAX(MIN(pixel / normalizer, (1 << d->vi->format->bitsPerSample) - 1), 0); // what is limited range ヽ( ﾟヮ・)ノ
+				pixel = std::max(std::min(pixel / normalizer, (1 << d->vi->format->bitsPerSample) - 1.0), 0.0); // what is limited range ヽ( ﾟヮ・)ノ
 
 				dstp[x + y * dst_stride] = (T)pixel;
 			}
