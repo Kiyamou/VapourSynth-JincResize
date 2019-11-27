@@ -21,6 +21,7 @@ typedef struct {
 	double blur;
 	double* lut;
 	int samples;
+	double peak;
 } FilterData;
 
 static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode* node, VSCore* core, const VSAPI* vsapi) {
@@ -53,7 +54,6 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 	for (int plane = 0; plane < d->vi->format->numPlanes; plane++) {
 		const T* framep = reinterpret_cast<const T*>(vsapi->getReadPtr(frame, plane));
 		T* VS_RESTRICT dstp = reinterpret_cast<T*>(vsapi->getWritePtr(dst, plane));
-		const VSFormat* fi = d->vi->format;
 		int in_height = vsapi->getFrameHeight(frame, 0);
 		int in_width = vsapi->getFrameWidth(frame, 0);
 
@@ -65,12 +65,16 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 		int oh = d->h * ih / in_height;
 		int ow = d->w * iw / in_width;
 
+		double scale_x = (double)iw / ow;
+		double scale_y = (double)ih / oh;
+		// However, I don't find speeding up, even slower
+
 		double radius2 = pow(d->radius, 2);
 		for (int y = 0; y < oh; y++) {
 			for (int x = 0; x < ow; x++) {
 				// reverse pixel mapping
-				double rpm_x = (x + 0.5) * (iw) / (ow);
-				double rpm_y = (y + 0.5) * (ih) / (oh);
+				double rpm_x = (x + 0.5) * scale_x;
+				double rpm_y = (y + 0.5) * scale_y;
 				// who cares about border handling anyway ヽ( ﾟヮ・)ノ
 				int window_x_lower = (int)std::max(ceil(rpm_x - d->radius + 0.5) - 1, 0.0);
 				int window_x_upper = (int)std::min(floor(rpm_x + d->radius + 0.5) - 1, iw - 1.0);
@@ -90,7 +94,7 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 						pixel += weight * src_value;
 					}
 				}
-				pixel = std::max(std::min(pixel / normalizer, (1 << d->vi->format->bitsPerSample) - 1.0), 0.0); // what is limited range ヽ( ﾟヮ・)ノ
+				pixel = std::max(std::min(pixel / normalizer, d->peak), 0.0); // what is limited range ヽ( ﾟヮ・)ノ
 
 				dstp[x + y * dst_stride] = (T)pixel;
 			}
@@ -106,8 +110,7 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 	}
 	else if (activationReason == arAllFramesReady) {
 		const VSFrameRef* frame = vsapi->getFrameFilter(n, d->node, frameCtx);
-		const VSFormat* fi = d->vi->format;
-		VSFrameRef* dst = vsapi->newVideoFrame(fi, d->w, d->h, frame, core);
+		VSFrameRef* dst = vsapi->newVideoFrame(d->vi->format, d->w, d->h, frame, core);
 
 		if (d->vi->format->bytesPerSample == 1)
 			process<uint8_t>(frame, dst, d, vsapi);
@@ -136,6 +139,7 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 	d->vi = vsapi->getVideoInfo(d->node);
 	d->w = (int)vsapi->propGetInt(in, "w", 0, &err);
 	d->h = (int)vsapi->propGetInt(in, "h", 0, &err);
+	d->peak = (1 << d->vi->format->bitsPerSample) - 1.0;
 
 	//probably add an RGB check because subpixel shifting is :effort:
 	try {
