@@ -198,12 +198,12 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 		d->lut = lut;
 	}
 	catch (const std::string& error) {
-		vsapi->setError(out, ("JincResize:" + error).c_str());
+		vsapi->setError(out, ("JincResize: " + error).c_str());
 		vsapi->freeNode(d->node);
 		return;
 	}
 
-	vsapi->createFilter(in, out, "Lanczos", filterInit, filterGetFrame, filterFree, fmParallel, 0, d.release(), core);
+	vsapi->createFilter(in, out, "JincResize", filterInit, filterGetFrame, filterFree, fmParallel, 0, d.release(), core);
 }
 
 //////////////////////////////////////////
