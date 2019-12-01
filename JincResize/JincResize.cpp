@@ -1,4 +1,4 @@
-﻿#include <cstdlib>
+#include <cstdlib>
 #include <cmath>
 #include <algorithm>
 #include <string>
@@ -11,6 +11,25 @@
 #define JINC_ZERO 1.2196698912665045
 #define M_PI      3.14159265358979323846
 
+static double jinc_zeros[16] = {
+	1.2196698912665045,
+	2.2331305943815286,
+	3.2383154841662362,
+	4.2410628637960699,
+	5.2427643768701817,
+	6.2439216898644877,
+	7.2447598687199570,
+	8.2453949139520427,
+	9.2458926849494673,
+	10.246293348754916,
+	11.246622794877883,
+	12.246898461138105,
+	13.247132522181061,
+	14.247333735806849,
+	15.247508563037300,
+	16.247661874700962
+};
+
 typedef struct {
 	VSNodeRef* node;
 	const VSVideoInfo* vi;
@@ -18,6 +37,7 @@ typedef struct {
 	int h;
 	int antiring;
 	double radius;
+	int tap;
 	double blur;
 	double* lut;
 	int samples;
@@ -148,9 +168,14 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 		if (err)
 			d->antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ
 
-		d->radius = vsapi->propGetFloat(in, "radius", 0, &err);
+		d->tap = vsapi->propGetInt(in, "tap", 0, &err);
 		if (err)
-			d->radius = 3.2383154841662362;
+			d->tap = 3;
+
+		if (d->tap < 1 || d->tap > 16)
+			throw std::string{ "tap must be in the range of 1-16" };
+
+		d->radius = jinc_zeros[d->tap - 1];
 
 		d->blur = vsapi->propGetFloat(in, "blur", 0, &err);
 		if (err)
@@ -185,6 +210,14 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 // Init
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin* plugin) {
-	configFunc("com.ewa.resampling", "ewa", "VapourSynth EWA resampling", VAPOURSYNTH_API_VERSION, 1, plugin);
-	registerFunc("Lanczos", "clip:clip;w:int;h:int;radius:float:opt;blur:float:opt;antiring:int:opt", filterCreate, 0, plugin);
+	configFunc("com.vapoursynth.jincresize", "jinc", "VapourSynth EWA resampling", VAPOURSYNTH_API_VERSION, 1, plugin);
+
+	registerFunc("JincResize", 
+		"clip:clip;"
+		"w:int;"
+		"h:int;"
+		"tap:int:opt;"
+		"blur:float:opt;"
+		"antiring:int:opt", 
+		filterCreate, 0, plugin);
 }
