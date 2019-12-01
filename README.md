@@ -1,8 +1,8 @@
 # Description
 
-JincResize works by Jinc algorithms (EWA Lanczos).
+JincResize works by Jinc (EWA Lanczos) algorithms.
 
-Modified from EWA-Resampling-VS:  https://github.com/Lypheo/EWA-Resampling-VS . Added the 8bit support.
+Modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added the 8bit support.
 
 I'm a beginner for C++. The plugin needs improvement. I will try to modify in the future.
 
@@ -12,10 +12,24 @@ I'm a beginner for C++. The plugin needs improvement. I will try to modify in th
 core.jinc.JincResize(clip clip, int width, int height, int tap, float blur)
 ```
 
-* *clip*: Clip to process,  integer sample type of 8-16 bit depth is supported.
-* *width*: The width of output.
-* *height*: The height of output.
-* *tap*: Corresponding to different zero points of Jinc function (Range: 1–16). The recommended parameters is 3, 4, 6, 8, which is similar to the [AviSynth functions](https://github.com/AviSynth/jinc-resize),  ` Jinc36Resize `, ` Jinc64Resize `, ` Jinc128Resize `, ` Jinc256Resize `. *(Default: 3)*
+* ***clip***
+    * Required parameter.
+    * Clip to process,  integer sample type of 8-16 bit depth is supported.
+* ***width***
+    * Required parameter.
+    * The width of output.
+* ***height***
+    * Required parameter.
+    * The height of output.
+* ***tap***
+    * Optional parameter. Range: 1–16. *Default: 3.*
+    * Corresponding to different zero points of Jinc function.
+    * The recommended value is 3, 4, 6, 8, which is similar to the [AviSynth functions](https://github.com/AviSynth/jinc-resize),  ` Jinc36Resize `, ` Jinc64Resize `, ` Jinc128Resize `, ` Jinc256Resize `.
+* ***blur***
+    * Optional parameter. *Default: 0.9812505644269356.*
+    * Blur processing, it can reduce side effects.
+    * To achieve blur, the value should less than 1.
+    * If don't have relevant knowledge or experience, had better not modify the parameter.
 
 # Compilation
 
