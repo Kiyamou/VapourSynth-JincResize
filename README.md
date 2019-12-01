@@ -15,7 +15,7 @@ core.jinc.JincResize(clip clip, int width, int height, int tap, float blur)
 * *clip*: Clip to process,  integer sample type of 8-16 bit depth is supported.
 * *width*: The width of output.
 * *height*: The height of output.
-* *tap*: Corresponding to different zeros of Jinc function (Range: 1–16). The recommended parameters is 3, 4, 6, 8, which is similar to the [AviSynth functions](https://github.com/AviSynth/jinc-resize),  ` Jinc36Resize `, ` Jinc64Resize `, ` Jinc128Resize `, ` Jinc256Resize `. *(Default: 3)*
+* *tap*: Corresponding to different zero points of Jinc function (Range: 1–16). The recommended parameters is 3, 4, 6, 8, which is similar to the [AviSynth functions](https://github.com/AviSynth/jinc-resize),  ` Jinc36Resize `, ` Jinc64Resize `, ` Jinc128Resize `, ` Jinc256Resize `. *(Default: 3)*
 
 # Compilation
 
