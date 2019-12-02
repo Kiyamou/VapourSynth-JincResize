@@ -73,7 +73,6 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 	for (int plane = 0; plane < d->vi->format->numPlanes; plane++) {
 		const T* framep = reinterpret_cast<const T*>(vsapi->getReadPtr(frame, plane));
 		T* VS_RESTRICT dstp = reinterpret_cast<T*>(vsapi->getWritePtr(dst, plane));
-		const VSFormat* fi = d->vi->format;
 		int in_height = vsapi->getFrameHeight(frame, 0);
 		int in_width = vsapi->getFrameWidth(frame, 0);
 
@@ -212,12 +211,12 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin* plugin) {
 	configFunc("com.vapoursynth.jincresize", "jinc", "VapourSynth EWA resampling", VAPOURSYNTH_API_VERSION, 1, plugin);
 
-	registerFunc("JincResize", 
+	registerFunc("JincResize",
 		"clip:clip;"
 		"w:int;"
 		"h:int;"
 		"tap:int:opt;"
 		"blur:float:opt;"
-		"antiring:int:opt", 
+		"antiring:int:opt",
 		filterCreate, 0, plugin);
 }
