@@ -109,7 +109,11 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 						pixel += weight * src_value;
 					}
 				}
-				pixel = std::max(std::min(pixel / normalizer, (1 << d->vi->format->bitsPerSample) - 1.0), 0.0); // what is limited range ヽ( ﾟヮ・)ノ
+
+				if (d->vi->format->sampleType == stInteger)
+					pixel = std::max(std::min(pixel / normalizer, (1 << d->vi->format->bitsPerSample) - 1.0), 0.0); // what is limited range ヽ( ﾟヮ・)ノ
+				else
+					pixel = std::max(std::min(pixel / normalizer, 1.0), -1.0);
 
 				dstp[x + y * dst_stride] = (T)pixel;
 			}
@@ -130,8 +134,10 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 
 		if (d->vi->format->bytesPerSample == 1)
 			process<uint8_t>(frame, dst, d, vsapi);
-		else
+		else if (d->vi->format->bytesPerSample == 2)
 			process<uint16_t>(frame, dst, d, vsapi);
+		else
+			process<float>(frame, dst, d, vsapi);
 
 		vsapi->freeFrame(frame);
 		return dst;
@@ -160,8 +166,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 	try {
 		if (!isConstantFormat(d->vi) ||
 			(d->vi->format->sampleType == stInteger && d->vi->format->bitsPerSample > 16) ||
-			d->vi->format->sampleType == stFloat)
-			throw std::string{ "only constant format 8-16 bit integer input supported" };
+			(d->vi->format->sampleType == stFloat && d->vi->format->bitsPerSample != 32))
+			throw std::string{ "only constant format 8-16 bit integer and 32 bits float input supported" };
 
 		d->antiring = (int)vsapi->propGetInt(in, "antiring", 0, &err);
 		if (err)
