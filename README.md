@@ -14,7 +14,7 @@ core.jinc.JincResize(clip clip, int width, int height, int tap, float blur)
 
 * ***clip***
     * Required parameter.
-    * Clip to process,  integer sample type of 8-16 bit depth is supported.
+    * Clip to process, integer sample type of 8-16 bit depth or float sample type of 32 bit depth is supported.
 * ***width***
     * Required parameter.
     * The width of output.
