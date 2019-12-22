@@ -103,7 +103,8 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 						double distance = pow(rpm_x - (ewa_x + 0.5), 2.0) + pow(rpm_y - (ewa_y + 0.5), 2.0);
 						if (distance > radius2)
 							continue;
-						double weight = d->lut[(int)round((d->samples - 1) * distance / radius2)];
+						double index = round((d->samples - 1) * distance / radius2) + 6755399441055744.0;  // Magic number for "double to int"
+						double weight = d->lut[*reinterpret_cast<int*>(&(index))];
 						normalizer += weight;
 						T src_value = framep[ewa_x + ewa_y * frame_stride];
 						pixel += weight * src_value;
