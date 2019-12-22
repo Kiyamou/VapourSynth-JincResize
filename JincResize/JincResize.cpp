@@ -159,8 +159,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 
 	d->node = vsapi->propGetNode(in, "clip", 0, 0);
 	d->vi = vsapi->getVideoInfo(d->node);
-	d->w = (int)vsapi->propGetInt(in, "w", 0, &err);
-	d->h = (int)vsapi->propGetInt(in, "h", 0, &err);
+	d->w = int64ToIntS(vsapi->propGetInt(in, "w", 0, &err));
+	d->h = int64ToIntS(vsapi->propGetInt(in, "h", 0, &err));
 
 	//probably add an RGB check because subpixel shifting is :effort:
 	try {
@@ -169,11 +169,11 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 			(d->vi->format->sampleType == stFloat && d->vi->format->bitsPerSample != 32))
 			throw std::string{ "only constant format 8-16 bit integer and 32 bits float input supported" };
 
-		d->antiring = (int)vsapi->propGetInt(in, "antiring", 0, &err);
+		d->antiring = int64ToIntS(vsapi->propGetInt(in, "antiring", 0, &err));
 		if (err)
 			d->antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ
 
-		d->tap = vsapi->propGetInt(in, "tap", 0, &err);
+		d->tap = int64ToIntS(vsapi->propGetInt(in, "tap", 0, &err));
 		if (err)
 			d->tap = 3;
 
