@@ -8,8 +8,47 @@
 #include "VapourSynth.h"
 #include "VSHelper.h"
 
-#define JINC_ZERO 1.2196698912665045
-#define M_PI      3.14159265358979323846
+constexpr double JINC_ZERO_SQR = 1.48759464366204680005356;
+#ifndef M_PI // GCC seems to have it
+constexpr double M_PI = 3.14159265358979323846;
+#endif
+
+// Doesn't double precision overkill?
+
+// Taylor series coefficients of 2*BesselJ1(pi*x)/(pi*x) as (x^2) -> 0
+static double jinc_taylor_series[31] = {
+	1.0,
+	-1.23370055013616982735431137,
+	0.507339015802096027273126733,
+	-0.104317403816764804365258186,
+	0.0128696438477519721233840271,
+	-0.00105848577966854543020422691,
+	6.21835470803998638484476598e-05,
+	-2.73985272294670461142756204e-06,
+	9.38932725442064547796003405e-08,
+	-2.57413737759717407304931036e-09,
+	5.77402672521402031756429343e-11,
+	-1.07930605263598241754572977e-12,
+	1.70710316782347356046974552e-14,
+	-2.31434518382749184406648762e-16,
+	2.71924659665997312120515390e-18,
+	-2.79561335187943028518083529e-20,
+	2.53599244866299622352138464e-22,
+	-2.04487273140961494085786452e-24,
+	1.47529860450204338866792475e-26,
+	-9.57935105257523453155043307e-29,
+	5.62764317309979254140393917e-31,
+	-3.00555258814860366342363867e-33,
+	1.46559362903641161989338221e-35,
+	-6.55110024064596600335624426e-38,
+	2.69403199029404093412381643e-40,
+	-1.02265499954159964097119923e-42,
+	3.59444454568084324694180635e-45,
+	-1.17313973900539982313119019e-47,
+	3.56478606255557746426034301e-50,
+	-1.01100655781438313239513538e-52,
+	2.68232117541264485328658605e-55
+};
 
 static double jinc_zeros[16] = {
 	1.2196698912665045,
@@ -30,6 +69,50 @@ static double jinc_zeros[16] = {
 	16.247661874700962
 };
 
+// jinc(sqrt(x2))
+double jinc_sqr(double x2) {
+	if (x2 < 1.49) {
+		double res = 0.0;
+		for (auto j = 16; j > 0; --j)
+			res = res * x2 + jinc_taylor_series[j - 1];
+		return res;
+	}
+	else if (x2 < 4.97) {
+		double res = 0.0;
+		for (auto j = 21; j > 0; --j)
+			res = res * x2 + jinc_taylor_series[j - 1];
+		return res;
+	}
+	else if (x2 < 10.49) { // the 3-tap radius
+		double res = 0.0;
+		for (auto j = 26; j > 0; --j)
+			res = res * x2 + jinc_taylor_series[j - 1];
+		return res;
+	}
+	else if (x2 < 17.99) { // the 4-tap radius
+		double res = 0.0;
+		for (auto j = 31; j > 0; --j)
+			res = res * x2 + jinc_taylor_series[j - 1];
+		return res;
+	}
+	else {
+		auto x = M_PI * std::sqrt(x2);
+#if defined(_MSC_VER) // maybe not necessary
+		return 2.0 * j1(x) / x;
+#else
+		return 2.0 * std::cyl_bessel_j(1, x) / x;
+#endif
+	}
+}
+
+double sample_sqr(double (*filter)(double), double x2, double blur2, double radius2) {
+	if (blur2 > 0.0)
+		x2 /= blur2;
+	if (x2 < radius2)
+		return filter(x2);
+	return 0.0;
+}
+
 typedef struct {
 	VSNodeRef* node;
 	const VSVideoInfo* vi;
@@ -49,23 +132,6 @@ static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode*
 	new_vi.width = d->w;
 	new_vi.height = d->h;
 	vsapi->setVideoInfo(&new_vi, 1, node);
-}
-
-double jinc(double x) {
-	if (fabs(x) < 1e-8)
-		return 1.0;
-	x *= M_PI;
-	return 2.0 * j1(x) / x;
-}
-
-double sample(double (*filter)(double), double x, double blur, double radius) {
-	x = fabs(x);
-	x = blur > 0.0 ? x / blur : x;
-
-	if (x < radius)
-		return filter(x);
-
-	return 0.0;
 }
 
 template<typename T>
@@ -150,7 +216,7 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsapi) {
 	FilterData* d = static_cast<FilterData*>(instanceData);
 	vsapi->freeNode(d->node);
-	delete d->lut; // I don't konw it's necessary or not.
+	delete[] d->lut;
 	delete d;
 }
 
@@ -195,15 +261,17 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 
 		d->samples = 1000;
 
-		double* lut = reinterpret_cast<double*>(malloc(sizeof(double) * d->samples));
-		for (int i = 0; i < d->samples; ++i) {
-			double filter = sample(jinc, d->radius * sqrt((double)i / (d->samples - 1)), d->blur, d->radius); // saving the sqrt during filtering
-			double window = sample(jinc, JINC_ZERO * sqrt((double)i / (d->samples - 1)), 1, d->radius);
+		double* lut = new double[d->samples];
+		double radius2 = d->radius * d->radius;
+		for (auto i = 0; i < d->samples; ++i) {
+			double t2 = i / (d->samples - 1.0);
+			double filter = sample_sqr(jinc_sqr, radius2 * t2, d->blur * d->blur, radius2);
+			double window = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
 			lut[i] = filter * window;
 		}
 		d->lut = lut;
 	}
-	catch (const std::string& error) {
+	catch (const std::string & error) {
 		vsapi->setError(out, ("JincResize: " + error).c_str());
 		vsapi->freeNode(d->node);
 		return;
