@@ -1,8 +1,6 @@
-#include <cstdlib>
 #include <cmath>
 #include <algorithm>
 #include <string>
-
 #include <memory>
 
 #include "VapourSynth.h"
