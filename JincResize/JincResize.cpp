@@ -172,8 +172,7 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 						double index = round((d->samples - 1) * distance / radius2) + 6755399441055744.0;  // Magic number for "double to int"
 						double weight = d->lut[*reinterpret_cast<int*>(&(index))];
 						normalizer += weight;
-						T src_value = framep[ewa_x + ewa_y * frame_stride];
-						pixel += weight * src_value;
+						pixel += weight * (double)framep[ewa_x + ewa_y * frame_stride];
 					}
 				}
 
