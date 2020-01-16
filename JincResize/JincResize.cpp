@@ -1,8 +1,6 @@
-#include <cstdlib>
 #include <cmath>
 #include <algorithm>
 #include <string>
-
 #include <memory>
 
 #include "VapourSynth.h"
@@ -135,18 +133,18 @@ static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode*
 }
 
 template<typename T>
-static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* const VS_RESTRICT d, const VSAPI* vsapi) noexcept {
+static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* const VS_RESTRICT d, const VSAPI* vsapi) noexcept {
 	for (int plane = 0; plane < d->vi->format->numPlanes; plane++) {
-		const T* framep = reinterpret_cast<const T*>(vsapi->getReadPtr(frame, plane));
+		const T* srcp = reinterpret_cast<const T*>(vsapi->getReadPtr(src, plane));
 		T* VS_RESTRICT dstp = reinterpret_cast<T*>(vsapi->getWritePtr(dst, plane));
-		int in_height = vsapi->getFrameHeight(frame, 0);
-		int in_width = vsapi->getFrameWidth(frame, 0);
+		int in_height = vsapi->getFrameHeight(src, 0);
+		int in_width = vsapi->getFrameWidth(src, 0);
 
-		int frame_stride = vsapi->getStride(frame, plane) / sizeof(T);
+		int src_stride = vsapi->getStride(src, plane) / sizeof(T);
 		int dst_stride = vsapi->getStride(dst, plane) / sizeof(T);
 
-		int ih = vsapi->getFrameHeight(frame, plane);
-		int iw = vsapi->getFrameWidth(frame, plane);
+		int ih = vsapi->getFrameHeight(src, plane);
+		int iw = vsapi->getFrameWidth(src, plane);
 		int oh = d->h * ih / in_height;
 		int ow = d->w * iw / in_width;
 
@@ -172,8 +170,7 @@ static void process(const VSFrameRef* frame, VSFrameRef* dst, const FilterData* 
 						double index = round((d->samples - 1) * distance / radius2) + 6755399441055744.0;  // Magic number for "double to int"
 						double weight = d->lut[*reinterpret_cast<int*>(&(index))];
 						normalizer += weight;
-						T src_value = framep[ewa_x + ewa_y * frame_stride];
-						pixel += weight * src_value;
+						pixel += weight * (double)srcp[ewa_x + ewa_y * src_stride];
 					}
 				}
 
@@ -195,18 +192,17 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 		vsapi->requestFrameFilter(n, d->node, frameCtx);
 	}
 	else if (activationReason == arAllFramesReady) {
-		const VSFrameRef* frame = vsapi->getFrameFilter(n, d->node, frameCtx);
-		const VSFormat* fi = d->vi->format;
-		VSFrameRef* dst = vsapi->newVideoFrame(fi, d->w, d->h, frame, core);
+		const VSFrameRef* src = vsapi->getFrameFilter(n, d->node, frameCtx);
+		VSFrameRef* dst = vsapi->newVideoFrame(d->vi->format, d->w, d->h, src, core);
 
 		if (d->vi->format->bytesPerSample == 1)
-			process<uint8_t>(frame, dst, d, vsapi);
+			process<uint8_t>(src, dst, d, vsapi);
 		else if (d->vi->format->bytesPerSample == 2)
-			process<uint16_t>(frame, dst, d, vsapi);
+			process<uint16_t>(src, dst, d, vsapi);
 		else
-			process<float>(frame, dst, d, vsapi);
+			process<float>(src, dst, d, vsapi);
 
-		vsapi->freeFrame(frame);
+		vsapi->freeFrame(src);
 		return dst;
 	}
 
