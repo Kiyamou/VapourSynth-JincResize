@@ -67,8 +67,101 @@ static double jinc_zeros[16] = {
 	16.247661874700962
 };
 
+//  Modified from boost package math/tools/`rational.hpp`
+//
+//  (C) Copyright John Maddock 2006.
+//  Use, modification and distribution are subject to the
+//  Boost Software License, Version 1.0. (See accompanying file
+//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+static double evaluate_rational(const double* num, const double* denom, double z, int count)
+{
+   double s1, s2;
+   if(z <= 1.0)
+   {
+      s1 = num[count-1];
+      s2 = denom[count-1];
+      for(auto i = count - 2; i >= 0; --i)
+      {
+	 s1 *= z;
+	 s2 *= z;
+	 s1 += num[i];
+	 s2 += denom[i];
+      }
+   }
+   else
+   {
+      z = 1.0f / z;
+      s1 = num[0];
+      s2 = denom[0];
+      for(auto i = 1; i < count; ++i)
+      {
+	 s1 *= z;
+	 s2 *= z;
+	 s1 += num[i];
+	 s2 += denom[i];
+      }
+   }
+   return s1 / s2;
+}
+
+//  Modified from boost package `BesselJ1.hpp`
+//
+//  Copyright (c) 2006 Xiaogang Zhang
+//  Use, modification and distribution are subject to the
+//  Boost Software License, Version 1.0. (See accompanying file
+//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+static double jinc_sqr_boost_l(double x2)
+{
+	static const double bPC[7] = {
+		-4.4357578167941278571e+06,
+		-9.9422465050776411957e+06,
+		-6.6033732483649391093e+06,
+		-1.5235293511811373833e+06,
+		-1.0982405543459346727e+05,
+		-1.6116166443246101165e+03,
+		0.0
+	};
+	static const double bQC[7] = {
+		-4.4357578167941278568e+06,
+		-9.9341243899345856590e+06,
+		-6.5853394797230870728e+06,
+		-1.5118095066341608816e+06,
+		-1.0726385991103820119e+05,
+		-1.4550094401904961825e+03,
+		1.0
+	};
+	static const double bPS[7] = {
+		3.3220913409857223519e+04,
+		8.5145160675335701966e+04,
+		6.6178836581270835179e+04,
+		1.8494262873223866797e+04,
+		1.7063754290207680021e+03,
+		3.5265133846636032186e+01,
+		0.0
+	};
+	static const double bQS[7] = {
+		7.0871281941028743574e+05,
+		1.8194580422439972989e+06,
+		1.4194606696037208929e+06,
+		4.0029443582266975117e+05,
+		3.7890229745772202641e+04,
+		8.6383677696049909675e+02,
+		1.0
+	};
+    auto y2 = M_PI * M_PI * x2;
+    auto xp = std::sqrt(y2);
+    auto y2p = 64.0 / y2;
+    auto yp = 8.0 / xp;
+    auto factor = std::sqrt(xp / M_PI_f) * 2.0 / y2;
+    auto rc = evaluate_rational(bPC, bQC, y2p, 7);
+    auto rs = evaluate_rational(bPS, bQS, y2p, 7);
+    auto sx = std::sin(xp);
+    auto cx = std::cos(xp);
+    return factor * (rc * (sx - cx) + yp * rs * (sx + cx));
+}
+
 // jinc(sqrt(x2))
-double jinc_sqr(double x2) {
+static double jinc_sqr(double x2) {
 	if (x2 < 1.49) {
 		double res = 0.0;
 		for (auto j = 16; j > 0; --j)
@@ -93,17 +186,10 @@ double jinc_sqr(double x2) {
 			res = res * x2 + jinc_taylor_series[j - 1];
 		return res;
 	}
-	else {
-		auto x = M_PI * std::sqrt(x2);
-#if defined(_MSC_VER) // maybe not necessary
-		return 2.0 * j1(x) / x;
-#else
-		return 2.0 * std::cyl_bessel_j(1, x) / x;
-#endif
-	}
+	else return jinc_sqr_boost_l(x2);
 }
 
-double sample_sqr(double (*filter)(double), double x2, double blur2, double radius2) {
+static double sample_sqr(double (*filter)(double), double x2, double blur2, double radius2) {
 	if (blur2 > 0.0)
 		x2 /= blur2;
 	if (x2 < radius2)
