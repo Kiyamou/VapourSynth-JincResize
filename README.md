@@ -4,7 +4,7 @@
 
 JincResize works by Jinc (EWA Lanczos) algorithms.
 
-Modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added the 8bit support.
+Modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added 8 bit and 32 bit support.
 
 I'm a beginner for C++. The plugin needs improvement. I will try to modify in the future.
 
@@ -36,17 +36,13 @@ core.jinc.JincResize(clip clip, int width, int height[, int tap, float blur])
 
 ## Compilation
 
-The currently released dynamic link library is compiled in the following way.
-
 ```
-x86_64-w64-mingw32-g++ -shared -o JincResize.dll -O2 -static JincResize.cpp
+x86_64-w64-mingw32-g++ -shared -o JincResize.dll -O2 -static -std=c++17 JincResize.cpp
 ```
 
 `VapourSynth.h` and `VSHelper.h` need be in the same folder. You can get them from [here](https://github.com/vapoursynth/vapoursynth/tree/master/include) or your VapourSynth installation directory (`VapourSynth/sdk/include/vapoursynth`).
 
 Make sure the header files used during compilation are the same as those of your VapourSynth installation directory.
-
-If you compile with the latest source, need to add `-std=c++17` in the above command.
 
 ## Acknowledgement
 
