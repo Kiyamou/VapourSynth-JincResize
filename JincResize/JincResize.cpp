@@ -152,7 +152,7 @@ static double jinc_sqr_boost_l(double x2)
     auto xp = std::sqrt(y2);
     auto y2p = 64.0 / y2;
     auto yp = 8.0 / xp;
-    auto factor = std::sqrt(xp / M_PI_f) * 2.0 / y2;
+    auto factor = std::sqrt(xp / M_PI) * 2.0 / y2;
     auto rc = evaluate_rational(bPC, bQC, y2p, 7);
     auto rs = evaluate_rational(bPS, bQS, y2p, 7);
     auto sx = std::sin(xp);
