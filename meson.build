@@ -13,6 +13,7 @@ add_project_arguments(language : 'cpp')
 shared_module('jincresize', sources,
   dependencies : vapoursynth_dep,
   include_directories : include_directories('JincResize/include'),
+  cpp_args: ['-march=native'],
   install : true,
   install_dir : join_paths(vapoursynth_dep.get_pkgconfig_variable('libdir'), 'vapoursynth'),
   gnu_symbol_visibility : 'hidden'

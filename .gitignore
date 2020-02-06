@@ -335,3 +335,6 @@ VSHelper.h
 
 # Dynamic link library after compiling
 *.dll
+
+# meson build folder
+build/
