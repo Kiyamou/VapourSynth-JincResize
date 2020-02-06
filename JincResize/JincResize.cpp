@@ -3,8 +3,8 @@
 #include <string>
 #include <memory>
 
-#include "VapourSynth.h"
-#include "VSHelper.h"
+#include "vapoursynth/VapourSynth.h"
+#include "vapoursynth/VSHelper.h"
 
 #include "include/JincFunc.hpp"
 
@@ -20,7 +20,7 @@ static double sample_sqr(double (*filter)(double), double x2, double blur2, doub
 	return 0.0;
 }
 
-typedef struct {
+struct FilterData {
 	VSNodeRef* node;
 	const VSVideoInfo* vi;
 	int w;
@@ -31,7 +31,7 @@ typedef struct {
 	double blur;
 	double* lut;
 	int samples;
-} FilterData;
+};
 
 static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode* node, VSCore* core, const VSAPI* vsapi) {
 	FilterData* d = static_cast<FilterData*>(*instanceData);
