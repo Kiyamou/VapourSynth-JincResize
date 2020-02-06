@@ -4,7 +4,7 @@ project('JincResize', 'cpp',
   version : '5'
 )
 
-sources = ['JincResize.cpp']
+sources = ['JincResize/JincResize.cpp']
 
 vapoursynth_dep = dependency('vapoursynth').partial_dependency(compile_args : true, includes : true)
 
@@ -12,7 +12,7 @@ add_project_arguments(language : 'cpp')
 
 shared_module('jincresize', sources,
   dependencies : vapoursynth_dep,
-  include_directories : include_directories('include'),
+  include_directories : include_directories('JincResize/include'),
   install : true,
   install_dir : join_paths(vapoursynth_dep.get_pkgconfig_variable('libdir'), 'vapoursynth'),
   gnu_symbol_visibility : 'hidden'
