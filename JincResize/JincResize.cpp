@@ -3,6 +3,10 @@
 #include <string>
 #include <memory>
 
+#if !defined(_MSC_VER)
+#include "immintrin.h"
+#endif
+
 #include "vapoursynth/VapourSynth.h"
 #include "vapoursynth/VSHelper.h"
 
@@ -121,7 +125,11 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsapi) {
 	FilterData* d = static_cast<FilterData*>(instanceData);
 	vsapi->freeNode(d->node);
+#if defined(_MSC_VER)
 	delete[] d->lut;
+#else
+	_mm_free(d->lut);
+#endif
 	delete d;
 }
 
@@ -164,16 +172,38 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 			d->blur = d->blur * scale;
 		}
 
-		d->samples = 1000;
-
+		d->samples = 1000;  // should be a multiple of 4
+#if defined(_MSC_VER)
 		double* lut = new double[d->samples];
 		double radius2 = d->radius * d->radius;
+		double blur2 = d->blur * d->blur;
 		for (auto i = 0; i < d->samples; ++i) {
 			double t2 = i / (d->samples - 1.0);
-			double filter = sample_sqr(jinc_sqr, radius2 * t2, d->blur * d->blur, radius2);
+			double filter = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
 			double window = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
 			lut[i] = filter * window;
 		}
+#else
+		double* lut = (double *)_mm_malloc(sizeof(double) * d->samples, 64);
+		double* filters = (double *)_mm_malloc(sizeof(double) * d->samples, 64);
+		double* windows = (double *)_mm_malloc(sizeof(double) * d->samples, 64);
+		auto radius2 = d->radius * d->radius;
+		auto blur2 = d->blur * d->blur;
+		for (auto i = 0; i < d->samples; i++) {
+			auto t2 = i / (d->samples - 1.0);
+			filters[i] = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
+			windows[i] = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
+		}
+		for (auto j = 0; j < d->samples / 4; ++j)
+		{
+			auto rf = _mm256_load_pd(filters + j * 4);
+			auto rw = _mm256_load_pd(windows + j * 4);
+			auto rl = _mm256_mul_pd(rf, rw);
+			_mm256_store_pd(lut + j * 4, rl);
+		}
+		_mm_free(filters);
+		_mm_free(windows);
+#endif
 		d->lut = lut;
 	}
 	catch (const std::string & error) {

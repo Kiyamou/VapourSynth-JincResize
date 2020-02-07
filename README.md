@@ -39,7 +39,7 @@ core.jinc.JincResize(clip clip, int width, int height[, int tap, float blur])
 ### Windows
 
 ```
-x86_64-w64-mingw32-g++ -shared -o JincResize.dll -O2 -static -std=c++17 JincResize.cpp
+x86_64-w64-mingw32-g++ -shared -o JincResize.dll -O2 -static -march=native -std=c++17 JincResize.cpp
 ```
 
 `VapourSynth.h` and `VSHelper.h` need be in the specified folder. You can get them from [here](https://github.com/vapoursynth/vapoursynth/tree/master/include) or your VapourSynth installation directory (`VapourSynth/sdk/include/vapoursynth`).
