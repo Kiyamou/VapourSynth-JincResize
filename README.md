@@ -4,9 +4,11 @@
 
 JincResize works by Jinc (EWA Lanczos) algorithms.
 
-Modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added 8 bit and 32 bit support.
+Modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added 8 bit and 32 bit support, and some code optimization.
 
 I'm a beginner for C++. The plugin needs improvement. I will try to modify in the future.
+
+If want to learn more about Jinc, you can read the [blog post](https://zhuanlan.zhihu.com/p/103910606) (Simplified Chinese / 简体中文).
 
 ## Usage
 
@@ -33,6 +35,19 @@ core.jinc.JincResize(clip clip, int width, int height[, int tap, float blur])
     * Blur processing, it can reduce side effects.
     * To achieve blur, the value should less than 1.
     * If don't have relevant knowledge or experience, had better not modify the parameter.
+
+## Tips
+
+JincResize will lead to ringing. A solution is to use de-ringing as post-processing, such as `HQDeringmod()` in [havsfunc](https://github.com/HomeOfVapourSynthEvolution/havsfunc). A simple example as follows.
+
+```python
+from vapoursynth import core
+import havfunc as haf
+
+# src is a 720p clip
+dst = core.jinc.JincResize(src, 1920, 1080)
+dst = haf.HQDeringmod(dst)
+```
 
 ## Compilation
 
