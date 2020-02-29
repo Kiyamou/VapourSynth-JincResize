@@ -51,16 +51,14 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
     for (int plane = 0; plane < d->vi->format->numPlanes; plane++) {
         const T* srcp = reinterpret_cast<const T*>(vsapi->getReadPtr(src, plane));
         T* VS_RESTRICT dstp = reinterpret_cast<T*>(vsapi->getWritePtr(dst, plane));
-        int in_height = vsapi->getFrameHeight(src, 0);
-        int in_width = vsapi->getFrameWidth(src, 0);
 
         int src_stride = vsapi->getStride(src, plane) / sizeof(T);
         int dst_stride = vsapi->getStride(dst, plane) / sizeof(T);
 
         int ih = vsapi->getFrameHeight(src, plane);
         int iw = vsapi->getFrameWidth(src, plane);
-        int oh = d->h * ih / in_height;
-        int ow = d->w * iw / in_width;
+        int oh = vsapi->getFrameHeight(dst, plane);
+        int ow = vsapi->getFrameWidth(dst, plane);
 
         double radius2 = pow(d->radius, 2);
         for (int y = 0; y < oh; y++) {
