@@ -17,7 +17,8 @@ constexpr double DOUBLE_ROUND_MAGIC_NUMBER = 6755399441055744.0;
 
 // Doesn't double precision overkill?
 
-static double sample_sqr(double (*filter)(double), double x2, double blur2, double radius2) {
+static double sample_sqr(double (*filter)(double), double x2, double blur2, double radius2)
+{
     if (blur2 > 0.0)
         x2 /= blur2;
     if (x2 < radius2)
@@ -25,7 +26,8 @@ static double sample_sqr(double (*filter)(double), double x2, double blur2, doub
     return 0.0;
 }
 
-struct FilterData {
+struct FilterData
+{
     VSNodeRef* node;
     const VSVideoInfo* vi;
     int w;
@@ -38,7 +40,8 @@ struct FilterData {
     int samples;
 };
 
-static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode* node, VSCore* core, const VSAPI* vsapi) {
+static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode* node, VSCore* core, const VSAPI* vsapi)
+{
     FilterData* d = static_cast<FilterData*>(*instanceData);
     VSVideoInfo new_vi = (VSVideoInfo) * (d->vi);
     new_vi.width = d->w;
@@ -47,11 +50,12 @@ static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode*
 }
 
 template<typename T>
-static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* const VS_RESTRICT d, const VSAPI* vsapi) noexcept {
-    for (int plane = 0; plane < d->vi->format->numPlanes; plane++) {
+static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* const VS_RESTRICT d, const VSAPI* vsapi) noexcept
+{
+    for (int plane = 0; plane < d->vi->format->numPlanes; plane++)
+    {
         const T* srcp = reinterpret_cast<const T*>(vsapi->getReadPtr(src, plane));
         T* VS_RESTRICT dstp = reinterpret_cast<T*>(vsapi->getWritePtr(dst, plane));
-
         int src_stride = vsapi->getStride(src, plane) / sizeof(T);
         int dst_stride = vsapi->getStride(dst, plane) / sizeof(T);
 
@@ -60,9 +64,11 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
         int oh = vsapi->getFrameHeight(dst, plane);
         int ow = vsapi->getFrameWidth(dst, plane);
 
-        double radius2 = pow(d->radius, 2);
-        for (int y = 0; y < oh; y++) {
-            for (int x = 0; x < ow; x++) {
+        double radius2 = d->radius * d->radius;
+        for (int y = 0; y < oh; y++)
+        {
+            for (int x = 0; x < ow; x++)
+            {
                 // reverse pixel mapping
                 double rpm_x = (x + 0.5) * (iw) / (ow);
                 double rpm_y = (y + 0.5) * (ih) / (oh);
@@ -74,9 +80,11 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
                 double pixel = 0;
                 double normalizer = 0;
 
-                for (int ewa_y = window_y_lower; ewa_y <= window_y_upper; ewa_y++) {
-                    for (int ewa_x = window_x_lower; ewa_x <= window_x_upper; ewa_x++) {
-                        double distance = pow(rpm_x - (ewa_x + 0.5), 2.0) + pow(rpm_y - (ewa_y + 0.5), 2.0);
+                for (int ewa_y = window_y_lower; ewa_y <= window_y_upper; ewa_y++)
+                {
+                    for (int ewa_x = window_x_lower; ewa_x <= window_x_upper; ewa_x++)
+                    {
+                        double distance = (rpm_x - ewa_x + 0.5) * (rpm_x - ewa_x + 0.5) + (rpm_y - ewa_y + 0.5) * (rpm_y - ewa_y + 0.5);
                         if (distance > radius2)
                             continue;
                         double index = round((d->samples - 1) * distance / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
@@ -97,13 +105,17 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
     }
 }
 
-static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void** instanceData, void** frameData, VSFrameContext* frameCtx, VSCore* core, const VSAPI* vsapi) {
+static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void** instanceData,
+    void** frameData, VSFrameContext* frameCtx, VSCore* core, const VSAPI* vsapi)
+{
     const FilterData* d = static_cast<const FilterData*>(*instanceData);
 
-    if (activationReason == arInitial) {
+    if (activationReason == arInitial)
+    {
         vsapi->requestFrameFilter(n, d->node, frameCtx);
     }
-    else if (activationReason == arAllFramesReady) {
+    else if (activationReason == arAllFramesReady)
+    {
         const VSFrameRef* src = vsapi->getFrameFilter(n, d->node, frameCtx);
         VSFrameRef* dst = vsapi->newVideoFrame(d->vi->format, d->w, d->h, src, core);
 
@@ -121,7 +133,8 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
     return 0;
 }
 
-static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsapi) {
+static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsapi)
+{
     FilterData* d = static_cast<FilterData*>(instanceData);
     vsapi->freeNode(d->node);
 #if defined(_MSC_VER)
@@ -132,7 +145,8 @@ static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsap
     delete d;
 }
 
-static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCore* core, const VSAPI* vsapi) {
+static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCore* core, const VSAPI* vsapi)
+{
     std::unique_ptr<FilterData> d = std::make_unique<FilterData>();
     int err;
 
@@ -142,7 +156,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
     d->h = int64ToIntS(vsapi->propGetInt(in, "h", 0, &err));
 
     //probably add an RGB check because subpixel shifting is :effort:
-    try {
+    try
+    {
         if (!isConstantFormat(d->vi) ||
             (d->vi->format->sampleType == stInteger && d->vi->format->bitsPerSample > 16) ||
             (d->vi->format->sampleType == stFloat && d->vi->format->bitsPerSample != 32))
@@ -165,7 +180,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         if (err)
             d->blur = 0.9812505644269356;
 
-        if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1) {
+        if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1)
+        {
             double scale = std::min((double)d->vi->width / d->w, (double)d->vi->height / d->h); // an ellipse would be :effort:
             d->radius = d->radius * scale;
             d->blur = d->blur * scale;
@@ -176,7 +192,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         double* lut = new double[d->samples];
         double radius2 = d->radius * d->radius;
         double blur2 = d->blur * d->blur;
-        for (auto i = 0; i < d->samples; ++i) {
+        for (auto i = 0; i < d->samples; ++i)
+        {
             double t2 = i / (d->samples - 1.0);
             double filter = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
             double window = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
@@ -188,7 +205,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         double* windows = (double *)_mm_malloc(sizeof(double) * d->samples, 64);
         auto radius2 = d->radius * d->radius;
         auto blur2 = d->blur * d->blur;
-        for (auto i = 0; i < d->samples; i++) {
+        for (auto i = 0; i < d->samples; i++)
+        {
             auto t2 = i / (d->samples - 1.0);
             filters[i] = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
             windows[i] = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
@@ -205,7 +223,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 #endif
         d->lut = lut;
     }
-    catch (const std::string & error) {
+    catch (const std::string & error)
+    {
         vsapi->setError(out, ("JincResize: " + error).c_str());
         vsapi->freeNode(d->node);
         return;
@@ -217,7 +236,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 //////////////////////////////////////////
 // Init
 
-VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin* plugin) {
+VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin* plugin)
+{
     configFunc("com.vapoursynth.jincresize", "jinc", "VapourSynth EWA resampling", VAPOURSYNTH_API_VERSION, 1, plugin);
 
     registerFunc("JincResize",
