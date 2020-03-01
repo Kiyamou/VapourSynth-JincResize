@@ -64,19 +64,23 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
         int oh = vsapi->getFrameHeight(dst, plane);
         int ow = vsapi->getFrameWidth(dst, plane);
 
+        float scale_x = (float)iw / ow;
+        float scale_y = (float)ih / oh;
+
+        float radiusf = (float)(d->radius);
         double radius2 = d->radius * d->radius;
         for (int y = 0; y < oh; y++)
         {
             for (int x = 0; x < ow; x++)
             {
                 // reverse pixel mapping
-                double rpm_x = (x + 0.5) * (iw) / (ow);
-                double rpm_y = (y + 0.5) * (ih) / (oh);
+                float rpm_x = (x + 0.5f) * scale_x;
+                float rpm_y = (y + 0.5f) * scale_y;
                 // who cares about border handling anyway ヽ( ﾟヮ・)ノ
-                int window_x_lower = (int)std::max(ceil(rpm_x - d->radius + 0.5) - 1, 0.0);
-                int window_x_upper = (int)std::min(floor(rpm_x + d->radius + 0.5) - 1, iw - 1.0);
-                int window_y_lower = (int)std::max(ceil(rpm_y - d->radius + 0.5) - 1, 0.0);
-                int window_y_upper = (int)std::min(floor(rpm_y + d->radius + 0.5) - 1, ih - 1.0);
+                int window_x_lower = (int)std::max(ceil(rpm_x - radiusf + 0.5f) - 1, 0.0f);
+                int window_x_upper = (int)std::min(floor(rpm_x + radiusf + 0.5f) - 1, iw - 1.0f);
+                int window_y_lower = (int)std::max(ceil(rpm_y - radiusf + 0.5f) - 1, 0.0f);
+                int window_y_upper = (int)std::min(floor(rpm_y + radiusf + 0.5f) - 1, ih - 1.0f);
                 double pixel = 0;
                 double normalizer = 0;
 
