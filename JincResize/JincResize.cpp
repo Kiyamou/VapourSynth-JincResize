@@ -1,5 +1,4 @@
 #include <cmath>
-#include <algorithm>
 #include <string>
 #include <memory>
 
@@ -11,20 +10,12 @@
 #include "vapoursynth/VSHelper.h"
 
 #include "include/JincFunc.hpp"
+#include "include/Helper.hpp"
 
 constexpr double JINC_ZERO_SQR = 1.48759464366204680005356;
 constexpr double DOUBLE_ROUND_MAGIC_NUMBER = 6755399441055744.0;
 
 // Doesn't double precision overkill?
-
-static double sample_sqr(double (*filter)(double), double x2, double blur2, double radius2)
-{
-    if (blur2 > 0.0)
-        x2 /= blur2;
-    if (x2 < radius2)
-        return filter(x2);
-    return 0.0;
-}
 
 struct FilterData
 {
@@ -90,14 +81,14 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
                         double index = round((d->samples - 1) * distance / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
                         double weight = d->lut[*reinterpret_cast<int*>(&(index))];
                         normalizer += weight;
-                        pixel += weight * (double)srcp[ewa_x + ewa_y * src_stride];
+                        pixel += weight * srcp[ewa_x + ewa_y * src_stride];
                     }
                 }
 
                 if (d->vi->format->sampleType == stInteger)
-                    pixel = std::max(std::min(pixel / normalizer, (1 << d->vi->format->bitsPerSample) - 1.0), 0.0); // what is limited range ヽ( ﾟヮ・)ノ
+                    pixel = clamp(pixel / normalizer, 0.0, (1 << d->vi->format->bitsPerSample) - 1.0); // what is limited range ヽ( ﾟヮ・)ノ
                 else
-                    pixel = std::max(std::min(pixel / normalizer, 1.0), -1.0);
+                    pixel = clamp(pixel / normalizer, -1.0, 1.0);
 
                 dstp[x + y * dst_stride] = (T)pixel;
             }
