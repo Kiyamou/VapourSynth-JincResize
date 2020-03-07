@@ -152,13 +152,14 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>vapoursynth.lib;vsscript.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalManifestDependencies>%(AdditionalManifestDependencies)</AdditionalManifestDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\VapourSynth\sdk\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\VapourSynth\sdk\lib64;C:\Program Files (x86)\VapourSynth\sdk\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="JincResize.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Helper.hpp" />
     <ClInclude Include="include\JincFunc.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
