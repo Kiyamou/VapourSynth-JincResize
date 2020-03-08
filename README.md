@@ -49,6 +49,19 @@ dst = core.jinc.JincResize(src, 1920, 1080)
 dst = haf.HQDeringmod(dst)
 ```
 
+## Konwn Bugs
+
+When downscaling first and upscaling next, output will be abnormal in the bottom and right of scene, such as
+
+```python
+# clip is 1080p
+
+clip = core.fmtc.resample(clip, 1280, 720)
+clip = core.jinc.JincResize(clip, 1920, 1080)
+```
+
+However, if the original clip is 720p, not downscaled in the same script, upscaling will be normal.
+
 ## Compilation
 
 ### Windows
