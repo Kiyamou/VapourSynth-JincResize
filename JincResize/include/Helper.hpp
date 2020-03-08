@@ -4,9 +4,9 @@
 #include <algorithm>
 
 template <typename T>
-inline T clamp(T a, T b, T c)
+inline T clamp(T input, T range_min, T range_max)
 {
-    return std::min(std::max(a, b), c);
+    return std::min(std::max(input, range_min), range_max);
 }
 
 double sample_sqr(double (*filter)(double), double x2, double blur2, double radius2)
