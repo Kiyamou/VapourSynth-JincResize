@@ -18,5 +18,5 @@ install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8.1" CC="gcc-8.1"; fi
 
 script: >
-    meson build
-    ninja -C build
+  - meson build
+  - ninja -C build
