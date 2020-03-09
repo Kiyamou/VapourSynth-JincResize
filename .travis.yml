@@ -11,7 +11,7 @@ branches:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install ninja python3-pip python3-dev build-essential
-  - sudo pip3 install --upgarde pip
+  - sudo pip3 install --upgrade pip
   - sudo pip3 install meson
 
 install:
