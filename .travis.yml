@@ -15,8 +15,8 @@ before_install:
   - sudo pip3 install meson
 
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-8.1" CC="gcc-8.1"; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-7" CC="gcc-7"; fi
 
 script:
   - meson build
-  - ninja -C build
+  - sudo ninja -C build
