@@ -1,0 +1,22 @@
+sudo: required
+
+language: cpp
+complier:
+  - gcc
+
+branches:
+  only:
+    - master
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install ninja python-pip python-dev build-essential
+  - sudo pip3 install --upgarde pip
+  - sudo pip3 install meson
+
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-8.1" CC="gcc-8.1"; fi
+
+script: >
+    meson build
+    ninja -C build
