@@ -10,10 +10,10 @@ branches:
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install build-essential wget
+  - sudo apt-get install g++-7 build-essential wget
 
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-7" CC="gcc-7"; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-7"; fi
 
 script:
   - wget https://github.com/vapoursynth/vapoursynth/archive/R49-RC1.tar.gz

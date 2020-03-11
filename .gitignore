@@ -340,4 +340,4 @@ VSHelper.h
 build/
 
 # Linux build
-.so
+*.so
