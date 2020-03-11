@@ -12,11 +12,7 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install build-essential wget
   - echo -e "\n" | sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update
   - sudo apt-get install gcc-7 g++-7
-
-install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-7"; fi
 
 script:
   - wget https://github.com/vapoursynth/vapoursynth/archive/R49-RC1.tar.gz
@@ -25,4 +21,4 @@ script:
   - mv vapoursynth-R49-RC1/include/VapourSynth.h JincResize/vapoursynth/VapourSynth.h
   - mv vapoursynth-R49-RC1/include/VSHelper.h JincResize/vapoursynth/VSHelper.h
   - cd JincResize
-  - g++ -shared -fPIC -std=c++17 -O2 -march=native -o JincResize.so JincResize.cpp
+  - g++-7 -shared -fPIC -std=c++17 -O2 -march=native -o JincResize.so JincResize.cpp
