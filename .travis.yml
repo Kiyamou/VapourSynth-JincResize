@@ -11,7 +11,7 @@ branches:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install build-essential wget
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+  - echo -e "\n" | sudo add-apt-repository ppa:ubuntu-toolchain-r/test
   - sudo apt-get install g++-7
 
 install:
