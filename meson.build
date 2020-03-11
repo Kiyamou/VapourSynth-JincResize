@@ -1,7 +1,7 @@
 project('JincResize', 'cpp',
   default_options : ['buildtype=release', 'b_ndebug=if-release', 'cpp_std=c++17'],
   meson_version : '>=0.48.0',
-  version : '5'
+  version : '6'
 )
 
 sources = ['JincResize/JincResize.cpp']

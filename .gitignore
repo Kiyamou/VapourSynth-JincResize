@@ -338,3 +338,6 @@ VSHelper.h
 
 # meson build folder
 build/
+
+# Linux build
+.so

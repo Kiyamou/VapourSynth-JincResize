@@ -10,13 +10,16 @@ branches:
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install ninja python3-pip python3-dev build-essential
-  - sudo pip3 install --upgrade pip
-  - sudo pip3 install meson
+  - sudo apt-get install build-essential wget
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-7" CC="gcc-7"; fi
 
 script:
-  - meson build
-  - sudo ninja -C build
+  - wget https://github.com/vapoursynth/vapoursynth/archive/R49-RC1.tar.gz
+  - tar -xzvf R49-RC1.tar.gz vapoursynth-R49-RC1/include
+  - mkdir JincResize/vapoursynth
+  - mv vapoursynth-R49-RC1/include/VapourSynth.h JincResize/vapoursynth/VapourSynth.h
+  - mv vapoursynth-R49-RC1/include/VSHelper.h JincResize/vapoursynth/VSHelper.h
+  - cd JincResize
+  - g++ -shared -fPIC -std=c++17 -O2 -march=native -o JincResize.so JincResize.cpp

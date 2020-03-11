@@ -67,7 +67,7 @@ However, if the original clip is 720p, not downscaled in the same script, upscal
 ### Windows
 
 ```
-x86_64-w64-mingw32-g++ -shared -o JincResize.dll -O2 -static -march=native -std=c++17 JincResize.cpp
+x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O2 -march=native -o JincResize.dll JincResize.cpp
 ```
 
 `VapourSynth.h` and `VSHelper.h` need be in the specified folder. You can get them from [here](https://github.com/vapoursynth/vapoursynth/tree/master/include) or your VapourSynth installation directory (`VapourSynth/sdk/include/vapoursynth`).
@@ -79,6 +79,11 @@ Make sure the header files used during compilation are the same as those of your
 ```bash
 meson build
 ninja -C build
+```
+or dircetly
+
+```bash
+g++ -shared -fPIC -std=c++17 -O2 -march=native -o JincResize.so JincResize.cpp
 ```
 
 ## Acknowledgement
