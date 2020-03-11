@@ -10,7 +10,9 @@ branches:
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install g++-7 build-essential wget
+  - sudo apt-get install build-essential wget
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+  - sudo apt-get install g++-7
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-7"; fi
