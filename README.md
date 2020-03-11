@@ -1,5 +1,7 @@
 # VapourSynth-JincResize
 
+[![Build Status](https://api.travis-ci.org/Kiyamou/VapourSynth-JincResize.svg?branch=master)](https://travis-ci.org/github/Kiyamou/VapourSynth-JincResize)
+
 ## Description
 
 JincResize works by Jinc (EWA Lanczos) algorithms.
