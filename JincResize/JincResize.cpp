@@ -74,7 +74,7 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
                 {
                     for (int ewa_x = window_x_lower; ewa_x <= window_x_upper; ewa_x++)
                     {
-                        double distance = (rpm_x - ewa_x + 0.5) * (rpm_x - ewa_x + 0.5) + (rpm_y - ewa_y + 0.5) * (rpm_y - ewa_y + 0.5);
+                        double distance = (rpm_x - (ewa_x + 0.5)) * (rpm_x - (ewa_x + 0.5)) + (rpm_y - (ewa_y + 0.5)) * (rpm_y - (ewa_y + 0.5));
                         if (distance > radius2)
                             continue;
                         double index = round((d->samples - 1) * distance / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
