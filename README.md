@@ -51,7 +51,9 @@ dst = core.jinc.JincResize(src, 1920, 1080)
 dst = haf.HQDeringmod(dst)
 ```
 
-## Konwn Bugs
+## Known Bugs
+
+(Only found at r6 version)
 
 When downscaling first and upscaling next, output will be abnormal in the bottom and right of scene, such as
 
