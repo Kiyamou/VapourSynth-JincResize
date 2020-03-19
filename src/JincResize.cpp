@@ -5,30 +5,28 @@
 #include "immintrin.h"
 #endif
 
-#include "vapoursynth/VapourSynth.h"
-#include "vapoursynth/VSHelper.h"
-
-#include "include/JincFunc.hpp"
-#include "include/Helper.hpp"
+#include "../include/JincFunc.hpp"
+#include "../include/EWAResizer.hpp"
 
 constexpr double JINC_ZERO_SQR = 1.48759464366204680005356;
-constexpr double DOUBLE_ROUND_MAGIC_NUMBER = 6755399441055744.0;
-
-// Doesn't double precision overkill?
 
 struct FilterData
 {
     VSNodeRef* node;
     const VSVideoInfo* vi;
-    int w;
-    int h;
-    int antiring;
+    int w, h;
+    int peak;
     double radius;
     int tap;
     double blur;
     double* lut;
     int samples;
+    EWAPixelCoeff* out_y;
+    EWAPixelCoeff* out_u;
+    EWAPixelCoeff* out_v;
 };
+
+// Doesn't double precision overkill?
 
 static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode* node, VSCore* core, const VSAPI* vsapi)
 {
@@ -54,43 +52,23 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
         int oh = vsapi->getFrameHeight(dst, plane);
         int ow = vsapi->getFrameWidth(dst, plane);
 
-        double radius2 = d->radius * d->radius;
-        for (int y = 0; y < oh; y++)
+        if (d->vi->format->bytesPerSample <= 2)
         {
-            for (int x = 0; x < ow; x++)
-            {
-                // reverse pixel mapping
-                double rpm_x = (x + 0.5) * (iw) / (ow);
-                double rpm_y = (y + 0.5) * (ih) / (oh);
-                // who cares about border handling anyway ヽ( ﾟヮ・)ノ
-                int window_x_lower = (int)std::max(ceil(rpm_x - d->radius + 0.5) - 1, 0.0);
-                int window_x_upper = (int)std::min(floor(rpm_x + d->radius + 0.5) - 1, iw - 1.0);
-                int window_y_lower = (int)std::max(ceil(rpm_y - d->radius + 0.5) - 1, 0.0);
-                int window_y_upper = (int)std::min(floor(rpm_y + d->radius + 0.5) - 1, ih - 1.0);
-                double pixel = 0;
-                double normalizer = 0;
-
-                for (int ewa_y = window_y_lower; ewa_y <= window_y_upper; ewa_y++)
-                {
-                    for (int ewa_x = window_x_lower; ewa_x <= window_x_upper; ewa_x++)
-                    {
-                        double distance = (rpm_x - (ewa_x + 0.5)) * (rpm_x - (ewa_x + 0.5)) + (rpm_y - (ewa_y + 0.5)) * (rpm_y - (ewa_y + 0.5));
-                        if (distance > radius2)
-                            continue;
-                        double index = round((d->samples - 1) * distance / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
-                        double weight = d->lut[*reinterpret_cast<int*>(&(index))];
-                        normalizer += weight;
-                        pixel += weight * srcp[ewa_x + ewa_y * src_stride];
-                    }
-                }
-
-                if (d->vi->format->sampleType == stInteger)
-                    pixel = clamp(pixel / normalizer, 0.0, (1 << d->vi->format->bitsPerSample) - 1.0); // what is limited range ヽ( ﾟヮ・)ノ
-                else
-                    pixel = clamp(pixel / normalizer, -1.0, 1.0);
-
-                dstp[x + y * dst_stride] = (T)pixel;
-            }
+            if (plane == 0)
+                resize_plane_c(d->out_y, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, d->peak);
+            else if (plane == 1)
+                resize_plane_c(d->out_u, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, d->peak);
+            else if (plane == 2)
+                resize_plane_c(d->out_v, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, d->peak);
+        }
+        else
+        {
+            if (plane == 0)
+                resize_plane_c(d->out_y, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, 65536); // any number more than 65535 is OK
+            else if (plane == 1)
+                resize_plane_c(d->out_u, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, 65536); // only distinguish 32bit and 8-16bit
+            else if (plane == 2)
+                resize_plane_c(d->out_v, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, 65536);
         }
     }
 }
@@ -127,6 +105,14 @@ static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsap
 {
     FilterData* d = static_cast<FilterData*>(instanceData);
     vsapi->freeNode(d->node);
+
+    delete_coeff_table(d->out_y);
+    if (d->vi->format->numPlanes > 1)
+    {
+        delete_coeff_table(d->out_u);
+        delete_coeff_table(d->out_v);
+    }
+
 #if defined(_MSC_VER)
     delete[] d->lut;
 #else
@@ -142,8 +128,11 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 
     d->node = vsapi->propGetNode(in, "clip", 0, 0);
     d->vi = vsapi->getVideoInfo(d->node);
-    d->w = int64ToIntS(vsapi->propGetInt(in, "w", 0, &err));
-    d->h = int64ToIntS(vsapi->propGetInt(in, "h", 0, &err));
+    d->w = int64ToIntS(vsapi->propGetInt(in, "width", 0, &err));
+    d->h = int64ToIntS(vsapi->propGetInt(in, "height", 0, &err));
+
+    if (d->vi->format->bytesPerSample <= 2)
+        d->peak = (1 << d->vi->format->bitsPerSample) - 1;
 
     //probably add an RGB check because subpixel shifting is :effort:
     try
@@ -152,10 +141,6 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             (d->vi->format->sampleType == stInteger && d->vi->format->bitsPerSample > 16) ||
             (d->vi->format->sampleType == stFloat && d->vi->format->bitsPerSample != 32))
             throw std::string{ "only constant format 8-16 bit integer and 32 bits float input supported" };
-
-        d->antiring = int64ToIntS(vsapi->propGetInt(in, "antiring", 0, &err));
-        if (err)
-            d->antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ
 
         d->tap = int64ToIntS(vsapi->propGetInt(in, "tap", 0, &err));
         if (err)
@@ -177,7 +162,23 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             d->blur = d->blur * scale;
         }
 
-        d->samples = 1000;  // should be a multiple of 4
+        double crop_top = vsapi->propGetFloat(in, "crop_top", 0, &err);
+        if (err)
+            crop_top = 0.0;
+
+        double crop_left = vsapi->propGetFloat(in, "crop_left", 0, &err);
+        if (err)
+            crop_left = 0.0;
+
+        double crop_width = vsapi->propGetFloat(in, "crop_width", 0, &err);
+        if (err)
+            crop_width = (double)d->vi->width;
+
+        double crop_height = vsapi->propGetFloat(in, "crop_height", 0, &err);
+        if (err)
+            crop_height = (double)d->vi->height;
+
+        d->samples = 1024;  // should be a multiple of 4
 #if defined(_MSC_VER)
         double* lut = new double[d->samples];
         double radius2 = d->radius * d->radius;
@@ -212,6 +213,30 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         _mm_free(windows);
 #endif
         d->lut = lut;
+
+        int quantize_x = 256;
+        int quantize_y = 256;
+
+        d->out_y = new EWAPixelCoeff();
+
+        generate_coeff_table_c(d->lut, d->out_y, quantize_x, quantize_y, d->vi->width, d->vi->height,
+            d->w, d->h, d->radius, crop_left, crop_top, crop_width, crop_height);
+
+        if (d->vi->format->numPlanes > 1)
+        {
+            d->out_u = new EWAPixelCoeff();
+            d->out_v = new EWAPixelCoeff();
+
+            int width_uv = d->vi->format->subSamplingW;
+            int height_uv = d->vi->format->subSamplingH;
+            double div_w = 1 << width_uv;
+            double div_h = 1 << height_uv;
+
+            generate_coeff_table_c(d->lut, d->out_u, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
+                d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
+            generate_coeff_table_c(d->lut, d->out_v, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
+                d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
+        }
     }
     catch (const std::string & error)
     {
@@ -223,19 +248,19 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
     vsapi->createFilter(in, out, "JincResize", filterInit, filterGetFrame, filterFree, fmParallel, 0, d.release(), core);
 }
 
-//////////////////////////////////////////
-// Init
-
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin* plugin)
 {
     configFunc("com.vapoursynth.jincresize", "jinc", "VapourSynth EWA resampling", VAPOURSYNTH_API_VERSION, 1, plugin);
 
     registerFunc("JincResize",
         "clip:clip;"
-        "w:int;"
-        "h:int;"
+        "width:int;"
+        "height:int;"
         "tap:int:opt;"
-        "blur:float:opt;"
-        "antiring:int:opt",
+        "crop_top:float:opt;"
+        "crop_left:float:opt;"
+        "crop_width:float:opt;"
+        "crop_height:float:opt;"
+        "blur:float:opt",
         filterCreate, 0, plugin);
 }

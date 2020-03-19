@@ -18,6 +18,15 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\EWAResizer.h" />
+    <ClInclude Include="..\include\EWAResizer.hpp" />
+    <ClInclude Include="..\include\Helper.hpp" />
+    <ClInclude Include="..\include\JincFunc.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\JincResize.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{E8E2620C-42EC-40A5-BAC1-B351DF8AD94F}</ProjectGuid>
@@ -155,13 +164,6 @@
       <AdditionalLibraryDirectories>C:\Program Files\VapourSynth\sdk\lib64;C:\Program Files (x86)\VapourSynth\sdk\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="JincResize.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\Helper.hpp" />
-    <ClInclude Include="include\JincFunc.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
