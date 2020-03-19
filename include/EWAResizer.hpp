@@ -47,7 +47,7 @@ static void delete_coeff_table(EWAPixelCoeff* out)
     if(out == nullptr)
         return;
 
-    _aligned_free(out->factor);
+    vs_aligned_free(out->factor);
     delete[] out->meta;
     delete[] out->factor_map;
 }
@@ -217,7 +217,7 @@ static void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize
 
     // Copy from tmp_array to real array
     const int tmp_array_size = tmp_array.size();
-    out->factor = (float *)_aligned_malloc(tmp_array_size * sizeof(float), 64);
+    out->factor = (float *)vs_aligned_malloc(tmp_array_size * sizeof(float), 64);
     memcpy(out->factor, &tmp_array[0], tmp_array_size * sizeof(float));
 }
 
