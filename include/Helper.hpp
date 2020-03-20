@@ -1,3 +1,14 @@
+/*
+*    Help function:
+*      1.clamp():
+*          Return the middle value, which is similar with np.clip() in Python
+*          Called in EWAResizer.hpp and JincResize.cpp
+*      2.sample_sqr():
+*          Data preprocessing for jinc_sqr() in JincFunc.hpp
+*          Called in JincResize.cpp
+*/
+
+
 #ifndef HELPER_HPP_
 #define HELPER_HPP_
 

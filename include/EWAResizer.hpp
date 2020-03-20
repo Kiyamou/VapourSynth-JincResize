@@ -8,7 +8,6 @@
 #ifndef EWARESIZER_HPP_
 #define EWARESIZER_HPP_
 
-#include <algorithm>
 #include <vector>
 
 #include "vapoursynth/VapourSynth.h"
@@ -27,22 +26,26 @@ static void init_coeff_table(EWAPixelCoeff* out, int quantize_x, int quantize_y,
     out->quantize_y = quantize_y;
     out->coeff_stripe = ((filter_size + 7) / 8) * 8;
 
+    // Allocate metadata
     out->meta = new EWAPixelCoeffMeta[dst_width * dst_height];
 
+    // Alocate factor map
     if (quantize_x * quantize_y > 0)
         out->factor_map = new int[quantize_x * quantize_y];
     else
         out->factor_map = nullptr;
 
+    // This will be reserved to exact size in coff generating procedure
     out->factor = nullptr;
 
+    // Zeroed memory
     if (out->factor_map != nullptr)
         memset(out->factor_map, 0, quantize_x * quantize_y * sizeof(int));
 
     memset(out->meta, 0, dst_width * dst_height * sizeof(EWAPixelCoeffMeta));
 }
 
-static void delete_coeff_table(EWAPixelCoeff* out)
+void delete_coeff_table(EWAPixelCoeff* out)
 {
     if(out == nullptr)
         return;
@@ -53,7 +56,7 @@ static void delete_coeff_table(EWAPixelCoeff* out)
 }
 
 /* Coefficient table generation */
-static void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize_x, int quantize_y,
+void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize_x, int quantize_y,
     int src_width, int src_height, int dst_width, int dst_height, double radius,
     double crop_left, double crop_top, double crop_width, double crop_height)
 {
@@ -81,11 +84,13 @@ static void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize
     float xpos = start_x;
     float ypos = start_y;
 
+    // Initialize EWAPixelCoeff data structure
     init_coeff_table(out, quantize_x, quantize_y, filter_size, dst_width, dst_height);
 
     std::vector<float> tmp_array;
     int tmp_array_top = 0;
 
+    // Use to advance the coeff pointer
     const int coeff_per_pixel = out->coeff_stripe * filter_size;
 
     const bool is_quantizing = (quantize_x * quantize_y) > 0;
@@ -98,6 +103,8 @@ static void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize
 
             EWAPixelCoeffMeta* meta = &out->meta[y * dst_width + x];
 
+            // Here, the window_*** variable specified a begin/size/end
+            // of EWA window to process.
             int window_end_x = int(xpos + filter_support);
             int window_end_y = int(ypos + filter_support);
 
@@ -139,12 +146,15 @@ static void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize
 
             if (!is_border && out->factor_map[quantized_y_value * quantize_x + quantized_x_value] != 0)
             {
+                // Not border pixel and already have coefficient calculated at this quantized position
                 meta->coeff_meta = out->factor_map[quantized_y_value * quantize_x + quantized_x_value] - 1;
             }
             else
             {
+                // then need computation
                 float divider = 0.f;
 
+                // This is the location of current target pixel in source pixel
                 // Qunatized
                 const float current_x = clamp(is_border ? xpos : quantized_xpos, 0.f, src_width - 1.f);
                 const float current_y = clamp(is_border ? ypos : quantized_ypos, 0.f, src_height - 1.f);
@@ -201,6 +211,7 @@ static void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize
                     curr_factor_ptr += out->coeff_stripe;
                 }
 
+                // Save factor to table
                 if (!is_border)
                     out->factor_map[quantized_y_value * quantize_x + quantized_x_value] = tmp_array_top + 1;
 
@@ -217,15 +228,15 @@ static void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize
 
     // Copy from tmp_array to real array
     const int tmp_array_size = tmp_array.size();
-    out->factor = (float *)vs_aligned_malloc(tmp_array_size * sizeof(float), 64);
+    out->factor = (float *)vs_aligned_malloc(tmp_array_size * sizeof(float), 64); // aligned to cache line
     memcpy(out->factor, &tmp_array[0], tmp_array_size * sizeof(float));
 }
 
-/* Resampling */
+/* Planar resampling with coeff table */
 //#pragma intel optimization_parameter target_arch=sse
 template<typename T>
-static void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp, int src_width,
-    int src_height, int dst_width, int dst_height, int src_stride, int dst_stride, int peak)
+void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
+    int dst_width, int dst_height, int src_stride, int dst_stride, int peak)
 {
     EWAPixelCoeffMeta* meta = coeff->meta;
 
@@ -234,16 +245,16 @@ static void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT d
         for (int x = 0; x < dst_width; x++)
         {
             const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
-            const float* coeffp = coeff->factor + meta->coeff_meta;
+            const float* coeff_ptr = coeff->factor + meta->coeff_meta;
 
             float result = 0.f;
             for (int ly = 0; ly < coeff->filter_size; ly++)
             {
                 for (int lx = 0; lx < coeff->filter_size; lx++)
                 {
-                    result += src_ptr[lx] * coeffp[lx];
+                    result += src_ptr[lx] * coeff_ptr[lx];
                 }
-                coeffp += coeff->coeff_stripe;
+                coeff_ptr += coeff->coeff_stripe;
                 src_ptr += src_stride;
             }
 

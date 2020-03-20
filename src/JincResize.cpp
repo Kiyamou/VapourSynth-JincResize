@@ -47,28 +47,26 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
         int src_stride = vsapi->getStride(src, plane) / sizeof(T);
         int dst_stride = vsapi->getStride(dst, plane) / sizeof(T);
 
-        int ih = vsapi->getFrameHeight(src, plane);
-        int iw = vsapi->getFrameWidth(src, plane);
-        int oh = vsapi->getFrameHeight(dst, plane);
-        int ow = vsapi->getFrameWidth(dst, plane);
+        int dst_width = vsapi->getFrameWidth(dst, plane);
+        int dst_height = vsapi->getFrameHeight(dst, plane);
 
         if (d->vi->format->bytesPerSample <= 2)
         {
             if (plane == 0)
-                resize_plane_c(d->out_y, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, d->peak);
+                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 1)
-                resize_plane_c(d->out_u, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, d->peak);
+                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 2)
-                resize_plane_c(d->out_v, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, d->peak);
+                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
         }
         else
         {
             if (plane == 0)
-                resize_plane_c(d->out_y, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, 65536); // any number more than 65535 is OK
+                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, 65536); // any number more than 65535 is OK
             else if (plane == 1)
-                resize_plane_c(d->out_u, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, 65536); // only distinguish 32bit and 8-16bit
+                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, 65536); // only distinguish 32bit and 8-16bit
             else if (plane == 2)
-                resize_plane_c(d->out_v, srcp, dstp, iw, ih, ow, oh, src_stride, dst_stride, 65536);
+                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, 65536);
         }
     }
 }

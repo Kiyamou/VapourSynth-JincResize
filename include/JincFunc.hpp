@@ -1,13 +1,17 @@
 /*
-    Define squared Jinc function.
-
-    See Pratt "Digital Image Processing" p.97 for Jinc/Bessel functions.
-    http://mathworld.wolfram.com/JincFunction.html and page 11 of
-    http://www.ph.ed.ac.uk/%7ewjh/teaching/mo/slides/lens/lens.pdf.
-
-    Calculate Jinc function by Taylor series, asymptotic expansion
-    or C++ special function, according to the different radius.
+*   Define Jinc function.
+*
+*   See Pratt "Digital Image Processing" p.97 for Jinc/Bessel functions.
+*   http://mathworld.wolfram.com/JincFunction.html and page 11 of
+*   http://www.ph.ed.ac.uk/%7ewjh/teaching/mo/slides/lens/lens.pdf.
+*
+*   Calculate Jinc function by Taylor series, asymptotic expansion
+*   or C++ special function, according to the different radius.
+*
+*   In fact, function is jinc(sqrt(x^2)), instead of jinc(x), which can
+*   avoid extra square root calculations in JincResize.cpp
 */
+
 
 #ifndef JINCFUNC_HPP_
 #define JINCFUNC_HPP_
