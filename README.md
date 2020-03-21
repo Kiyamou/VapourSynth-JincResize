@@ -6,7 +6,9 @@
 
 JincResize works by Jinc (EWA Lanczos) algorithms.
 
-Modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added 8 bit and 32 bit support, and some code optimization.
+The "r6.1" branch (Release r1 - r6.1) is modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added 8 bit and 32 bit support, and some code optimization.
+
+The master branch is ported from AviSynth version: https://github.com/AviSynth/jinc-resize and based on EWA-Resampling-VS.
 
 I'm a beginner for C++. The plugin needs improvement. I will try to modify in the future.
 
