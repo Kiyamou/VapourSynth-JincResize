@@ -56,7 +56,7 @@ void delete_coeff_table(EWAPixelCoeff* out)
 }
 
 /* Coefficient table generation */
-void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize_x, int quantize_y,
+void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int quantize_y,
     int src_width, int src_height, int dst_width, int dst_height, double radius,
     double crop_left, double crop_top, double crop_width, double crop_height)
 {
@@ -183,9 +183,10 @@ void generate_coeff_table_c(double* lut, EWAPixelCoeff* out, int quantize_x, int
                         const float dx = (current_x - window_x) * filter_step_x;
                         const float dy = (current_y - window_y) * filter_step_y;
                         const float dist = dx * dx + dy * dy;
-                        double index = round((1024 - 1) * dist / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
+                        double index_d = round((1024 - 1) * dist / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
+                        int index = *reinterpret_cast<int*>(&index_d);
 
-                        const float factor = (float)lut[*reinterpret_cast<int*>(&index)];
+                        const float factor = func->GetFactor(index);
 
                         tmp_array[curr_factor_ptr + lx] = factor;
                         divider += factor;

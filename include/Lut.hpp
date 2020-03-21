@@ -19,6 +19,8 @@ public:
     void InitLut(int lut_size, double radius, double blur);
     void DestroyLutTable();
 
+    float GetFactor(int index);
+
     double* lut;
 
 private:
@@ -78,6 +80,11 @@ void Lut::DestroyLutTable()
 #else
     _mm_free(lut);
 #endif
+}
+
+float Lut::GetFactor(int index)
+{
+    return (float)lut[index];
 }
 
 #endif

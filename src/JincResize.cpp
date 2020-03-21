@@ -174,7 +174,7 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         d->init_lut->InitLut(d->samples, d->radius, d->blur);
         d->out_y = new EWAPixelCoeff();
 
-        generate_coeff_table_c(d->init_lut->lut, d->out_y, quantize_x, quantize_y, d->vi->width, d->vi->height,
+        generate_coeff_table_c(d->init_lut, d->out_y, quantize_x, quantize_y, d->vi->width, d->vi->height,
             d->w, d->h, d->radius, crop_left, crop_top, crop_width, crop_height);
 
         if (d->vi->format->numPlanes > 1)
@@ -187,9 +187,9 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             double div_w = 1 << width_uv;
             double div_h = 1 << height_uv;
 
-            generate_coeff_table_c(d->init_lut->lut, d->out_u, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
+            generate_coeff_table_c(d->init_lut, d->out_u, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
                 d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
-            generate_coeff_table_c(d->init_lut->lut, d->out_v, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
+            generate_coeff_table_c(d->init_lut, d->out_v, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
                 d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
         }
     }
