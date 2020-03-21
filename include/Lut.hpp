@@ -16,7 +16,7 @@ public:
     Lut();
     ~Lut();
 
-    double* InitLut(int lut_size, double radius, double blur);
+    void InitLut(int lut_size, double radius, double blur);
     void DestroyLutTable();
 
     double* lut;
@@ -36,7 +36,7 @@ Lut::Lut()
 #endif
 }
 
-double* Lut::InitLut(int lut_size, double radius, double blur)
+void Lut::InitLut(int lut_size, double radius, double blur)
 {
 #if defined(_MSC_VER)
     auto radius2 = radius * radius;
@@ -69,7 +69,6 @@ double* Lut::InitLut(int lut_size, double radius, double blur)
     _mm_free(filters);
     _mm_free(windows);
 #endif
-    return lut;
 }
 
 void Lut::DestroyLutTable()
