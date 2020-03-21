@@ -14,7 +14,7 @@ class Lut
 {
 public:
     Lut();
-    ~Lut();
+    ~Lut() {};
 
     void InitLut(int lut_size, double radius, double blur);
     void DestroyLutTable();
@@ -84,6 +84,8 @@ void Lut::DestroyLutTable()
 
 float Lut::GetFactor(int index)
 {
+    if (index >= lut_size)
+        return 0.f;
     return (float)lut[index];
 }
 
