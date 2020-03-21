@@ -1,14 +1,7 @@
 #include <string>
 #include <memory>
 
-#if !defined(_MSC_VER)
-#include "immintrin.h"
-#endif
-
-#include "../include/JincFunc.hpp"
 #include "../include/EWAResizer.hpp"
-
-constexpr double JINC_ZERO_SQR = 1.48759464366204680005356;
 
 struct FilterData
 {
@@ -19,8 +12,8 @@ struct FilterData
     double radius;
     int tap;
     double blur;
-    double* lut;
     int samples;
+    Lut* init_lut;
     EWAPixelCoeff* out_y;
     EWAPixelCoeff* out_u;
     EWAPixelCoeff* out_v;
@@ -111,11 +104,7 @@ static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsap
         delete_coeff_table(d->out_v);
     }
 
-#if defined(_MSC_VER)
-    delete[] d->lut;
-#else
-    _mm_free(d->lut);
-#endif
+    d->init_lut->DestroyLutTable();
     delete d;
 }
 
@@ -177,47 +166,15 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             crop_height = (double)d->vi->height;
 
         d->samples = 1024;  // should be a multiple of 4
-#if defined(_MSC_VER)
-        double* lut = new double[d->samples];
-        double radius2 = d->radius * d->radius;
-        double blur2 = d->blur * d->blur;
-        for (auto i = 0; i < d->samples; ++i)
-        {
-            double t2 = i / (d->samples - 1.0);
-            double filter = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
-            double window = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
-            lut[i] = filter * window;
-        }
-#else
-        double* lut = (double *)_mm_malloc(sizeof(double) * d->samples, 64);
-        double* filters = (double *)_mm_malloc(sizeof(double) * d->samples, 64);
-        double* windows = (double *)_mm_malloc(sizeof(double) * d->samples, 64);
-        auto radius2 = d->radius * d->radius;
-        auto blur2 = d->blur * d->blur;
-        for (auto i = 0; i < d->samples; i++)
-        {
-            auto t2 = i / (d->samples - 1.0);
-            filters[i] = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
-            windows[i] = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
-        }
-        for (auto j = 0; j < d->samples / 4; ++j)
-        {
-            auto rf = _mm256_load_pd(filters + j * 4);
-            auto rw = _mm256_load_pd(windows + j * 4);
-            auto rl = _mm256_mul_pd(rf, rw);
-            _mm256_store_pd(lut + j * 4, rl);
-        }
-        _mm_free(filters);
-        _mm_free(windows);
-#endif
-        d->lut = lut;
 
         int quantize_x = 256;
         int quantize_y = 256;
 
+        d->init_lut = new Lut();
+        d->init_lut->InitLut(d->samples, d->radius, d->blur);
         d->out_y = new EWAPixelCoeff();
 
-        generate_coeff_table_c(d->lut, d->out_y, quantize_x, quantize_y, d->vi->width, d->vi->height,
+        generate_coeff_table_c(d->init_lut->lut, d->out_y, quantize_x, quantize_y, d->vi->width, d->vi->height,
             d->w, d->h, d->radius, crop_left, crop_top, crop_width, crop_height);
 
         if (d->vi->format->numPlanes > 1)
@@ -230,9 +187,9 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             double div_w = 1 << width_uv;
             double div_h = 1 << height_uv;
 
-            generate_coeff_table_c(d->lut, d->out_u, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
+            generate_coeff_table_c(d->init_lut->lut, d->out_u, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
                 d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
-            generate_coeff_table_c(d->lut, d->out_v, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
+            generate_coeff_table_c(d->init_lut->lut, d->out_v, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
                 d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
         }
     }

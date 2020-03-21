@@ -14,7 +14,7 @@
 #include "vapoursynth/VSHelper.h"
 
 #include "EWAResizer.h"
-#include "Helper.hpp"
+#include "Lut.hpp"
 
 constexpr double DOUBLE_ROUND_MAGIC_NUMBER = 6755399441055744.0;
 
