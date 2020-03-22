@@ -6,9 +6,17 @@
 
 JincResize is a resizer plugin for VapourSynth, works by Jinc function and elliptical weighted averaging (EWA). Support 8-16 bit and 32 bit sample type. Support YUV color family.
 
-The master branch is ported from [AviSynth plugin](https://github.com/AviSynth/jinc-resize) and based on [EWA-Resampling-VS](https://github.com/Lypheo/EWA-Resampling-VS). (In development, much faster than "r6.1" branch, add parameters, but has bug when there are texts on screen for 8-16 bit input)
+### master branch
+
+The master branch (Release r7-RC1) is ported from [AviSynth plugin](https://github.com/AviSynth/jinc-resize) and based on [EWA-Resampling-VS](https://github.com/Lypheo/EWA-Resampling-VS).
+
+The master branch is in developing. It's much faster than "r6.1" branch and adds parameters. But it has bug when there are texts on screen for 8bit and 16 bit input, while it's normal for 32bit input and 9-15bit input.
+
+### "r6.1" branch
 
 The "r6.1" branch (Release r1 - r6.1) is old version, based on [EWA-Resampling-VS](https://github.com/Lypheo/EWA-Resampling-VS).
+
+### More
 
 If want to learn more about Jinc, you can read the [post](https://zhuanlan.zhihu.com/p/103910606) (Simplified Chinese / 简体中文).
 
@@ -38,7 +46,12 @@ core.jinc.JincResize(clip clip, int width, int height[, int tap, float blur])
     * To achieve blur, the value should less than 1.
     * If don't have relevant knowledge or experience, had better not modify the parameter.
 
-**The added parameters after Release r6.1**
+**The added parameters in Release r7-RC1**
+
+```python
+core.jinc.JincResize(clip clip, int width, int height[, float crop_left, float crop_top,
+                     float crop_width, float crop_height, int tap, float blur])
+```
 
 * ***crop_left***
   * Optional parameter. *Default: 0.0*.
@@ -71,7 +84,7 @@ dst = haf.HQDeringmod(dst)
 ### Windows
 
 ```
-x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O2 -march=native -o JincResize.dll JincResize.cpp
+x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O2 -march=native JincResize.cpp -o JincResize.dll
 ```
 
 `VapourSynth.h` and `VSHelper.h` is need. You can get them from [here](https://github.com/vapoursynth/vapoursynth/tree/master/include) or your VapourSynth installation directory (`VapourSynth/sdk/include/vapoursynth`).
@@ -85,7 +98,7 @@ ninja -C build
 or dircetly
 
 ```bash
-g++ -shared -fPIC -std=c++17 -O2 -march=native -o JincResize.so JincResize.cpp
+g++ -shared -fPIC -std=c++17 -O2 -march=native JincResize.cpp -o JincResize.so
 ```
 
 ## Acknowledgement
