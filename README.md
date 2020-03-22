@@ -4,7 +4,7 @@
 
 ## Description
 
-JincResize is a resizer plugin for VapourSynth, works. Support 8-16 bit and 32 bit sample type. Support YUV color family.
+JincResize is a resizer plugin for VapourSynth, works by Jinc function and elliptical weighted averaging (EWA). Support 8-16 bit and 32 bit sample type. Support YUV color family.
 
 The master branch is ported from [AviSynth plugin](https://github.com/AviSynth/jinc-resize) and based on [EWA-Resampling-VS](https://github.com/Lypheo/EWA-Resampling-VS). (In development, much faster than "r6.1" branch, add parameters, but has bug when there are texts on screen for 8-16 bit input)
 
