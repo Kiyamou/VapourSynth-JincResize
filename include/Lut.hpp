@@ -24,7 +24,7 @@ public:
     double* lut;
 
 private:
-    int lut_size;
+    int lut_size = 1024;
     double radius;
     double blur;
 };
