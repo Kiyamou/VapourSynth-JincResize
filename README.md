@@ -4,15 +4,13 @@
 
 ## Description
 
-JincResize works by Jinc (EWA Lanczos) algorithms.
+JincResize is a resizer plugin for VapourSynth, works. Support 8-16 bit and 32 bit sample type. Support YUV color family.
 
-The "r6.1" branch (Release r1 - r6.1) is modified from EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS. Added 8 bit and 32 bit support, and some code optimization.
+The master branch is ported from [AviSynth plugin](https://github.com/AviSynth/jinc-resize) and based on [EWA-Resampling-VS](https://github.com/Lypheo/EWA-Resampling-VS). (In development, much faster than "r6.1" branch, add parameters, but has bug when there are texts on screen for 8-16 bit input)
 
-The master branch is ported from AviSynth version: https://github.com/AviSynth/jinc-resize and based on EWA-Resampling-VS.
+The "r6.1" branch (Release r1 - r6.1) is old version, based on [EWA-Resampling-VS](https://github.com/Lypheo/EWA-Resampling-VS).
 
-I'm a beginner for C++. The plugin needs improvement. I will try to modify in the future.
-
-If want to learn more about Jinc, you can read the [blog post](https://zhuanlan.zhihu.com/p/103910606) (Simplified Chinese / 简体中文).
+If want to learn more about Jinc, you can read the [post](https://zhuanlan.zhihu.com/p/103910606) (Simplified Chinese / 简体中文).
 
 ## Usage
 
@@ -33,12 +31,27 @@ core.jinc.JincResize(clip clip, int width, int height[, int tap, float blur])
 * ***tap***
     * Optional parameter. Range: 1–16. *Default: 3*.
     * Corresponding to different zero points of Jinc function.
-    * The recommended value is 3, 4, 6, 8, which is similar to the [AviSynth functions](https://github.com/AviSynth/jinc-resize),  ` Jinc36Resize `, ` Jinc64Resize `, ` Jinc128Resize `, ` Jinc256Resize `.
+    * The recommended value is 3, 4, 6, 8, which is similar to the [AviSynth plugin](https://github.com/AviSynth/jinc-resize),  ` Jinc36Resize `, ` Jinc64Resize `, ` Jinc128Resize `, ` Jinc256Resize `.
 * ***blur***
     * Optional parameter. *Default: 0.9812505644269356*.
     * Blur processing, it can reduce side effects.
     * To achieve blur, the value should less than 1.
     * If don't have relevant knowledge or experience, had better not modify the parameter.
+
+**The added parameters after Release r6.1**
+
+* ***crop_left***
+  * Optional parameter. *Default: 0.0*.
+  * Same as `src_left` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
+* ***crop_top***
+  * Optional parameter. *Default: 0.0*.
+  * Same as `src_top` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
+* ***crop_width***
+  * Optional parameter. *Default: the width of input*.
+  * Same as `src_width` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
+* ***crop_height***
+  * Optional parameter. *Default: the height of input*.
+  * Same as `src_height` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
 
 ## Tips
 
@@ -61,9 +74,7 @@ dst = haf.HQDeringmod(dst)
 x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O2 -march=native -o JincResize.dll JincResize.cpp
 ```
 
-`VapourSynth.h` and `VSHelper.h` need be in the specified folder. You can get them from [here](https://github.com/vapoursynth/vapoursynth/tree/master/include) or your VapourSynth installation directory (`VapourSynth/sdk/include/vapoursynth`).
-
-Make sure the header files used during compilation are the same as those of your VapourSynth installation directory.
+`VapourSynth.h` and `VSHelper.h` is need. You can get them from [here](https://github.com/vapoursynth/vapoursynth/tree/master/include) or your VapourSynth installation directory (`VapourSynth/sdk/include/vapoursynth`).
 
 ### Linux
 
@@ -79,4 +90,6 @@ g++ -shared -fPIC -std=c++17 -O2 -march=native -o JincResize.so JincResize.cpp
 
 ## Acknowledgement
 
-Thanks to [Lypheo]( https://github.com/Lypheo ), the original developer of EWA-Resampling-VS. I know nothing of algorithm implementation, only make a little modification in the grammar. If you think the plugin is useful, make a star for his [original repository](https://github.com/Lypheo/EWA-Resampling-VS).
+EWA-Resampling-VS: https://github.com/Lypheo/EWA-Resampling-VS
+
+AviSynth plugin: https://github.com/AviSynth/jinc-resize
