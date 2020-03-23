@@ -129,10 +129,10 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         if (err)
             tap = 3;
 
-        if (d->tap < 1 || d->tap > 16)
+        if (tap < 1 || tap > 16)
             throw std::string{ "tap must be in the range of 1-16" };
 
-        double radius = jinc_zeros[d->tap - 1];
+        double radius = jinc_zeros[tap - 1];
 
         double blur = vsapi->propGetFloat(in, "blur", 0, &err);
         if (err)
@@ -141,8 +141,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1)
         {
             double scale = std::min((double)d->vi->width / d->w, (double)d->vi->height / d->h); // an ellipse would be :effort:
-            d->radius = d->radius * scale;
-            d->blur = d->blur * scale;
+            radius = radius * scale;
+            blur = blur * scale;
         }
 
         double crop_top = vsapi->propGetFloat(in, "crop_top", 0, &err);
