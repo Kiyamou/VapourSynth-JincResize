@@ -5,6 +5,7 @@
 *    https://github.com/AviSynth/jinc-resize/blob/master/JincResize/EWAResizer.h
 */
 
+
 #ifndef EWARESIZER_HPP_
 #define EWARESIZER_HPP_
 

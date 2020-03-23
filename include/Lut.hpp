@@ -40,12 +40,13 @@ Lut::Lut()
 
 void Lut::InitLut(int lut_size, double radius, double blur)
 {
-#if defined(_MSC_VER)
     auto radius2 = radius * radius;
     auto blur2 = blur * blur;
+
+#if defined(_MSC_VER)
     for (auto i = 0; i < lut_size; ++i)
     {
-        double t2 = i / (lut_size - 1.0);
+        auto t2 = i / (lut_size - 1.0);
         double filter = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
         double window = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
         lut[i] = filter * window;
@@ -53,8 +54,6 @@ void Lut::InitLut(int lut_size, double radius, double blur)
 #else
     double* filters = (double *)_mm_malloc(sizeof(double) * lut_size, 64);
     double* windows = (double *)_mm_malloc(sizeof(double) * lut_size, 64);
-    auto radius2 = radius * radius;
-    auto blur2 = blur * blur;
     for (auto i = 0; i < lut_size; i++)
     {
         auto t2 = i / (lut_size - 1.0);

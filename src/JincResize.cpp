@@ -9,10 +9,6 @@ struct FilterData
     const VSVideoInfo* vi;
     int w, h;
     int peak;
-    double radius;
-    int tap;
-    double blur;
-    int samples;
     Lut* init_lut;
     EWAPixelCoeff* out_y;
     EWAPixelCoeff* out_u;
@@ -129,18 +125,18 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             (d->vi->format->sampleType == stFloat && d->vi->format->bitsPerSample != 32))
             throw std::string{ "only constant format 8-16 bit integer and 32 bits float input supported" };
 
-        d->tap = int64ToIntS(vsapi->propGetInt(in, "tap", 0, &err));
+        int tap = int64ToIntS(vsapi->propGetInt(in, "tap", 0, &err));
         if (err)
-            d->tap = 3;
+            tap = 3;
 
         if (d->tap < 1 || d->tap > 16)
             throw std::string{ "tap must be in the range of 1-16" };
 
-        d->radius = jinc_zeros[d->tap - 1];
+        double radius = jinc_zeros[d->tap - 1];
 
-        d->blur = vsapi->propGetFloat(in, "blur", 0, &err);
+        double blur = vsapi->propGetFloat(in, "blur", 0, &err);
         if (err)
-            d->blur = 0.9812505644269356;
+            blur = 0.9812505644269356;
 
         if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1)
         {
@@ -165,32 +161,32 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         if (err)
             crop_height = (double)d->vi->height;
 
-        d->samples = 1024;  // should be a multiple of 4
+        int samples = 1024;  // should be a multiple of 4
 
         int quantize_x = 256;
         int quantize_y = 256;
 
         d->init_lut = new Lut();
-        d->init_lut->InitLut(d->samples, d->radius, d->blur);
+        d->init_lut->InitLut(samples, radius, blur);
         d->out_y = new EWAPixelCoeff();
 
         generate_coeff_table_c(d->init_lut, d->out_y, quantize_x, quantize_y, d->vi->width, d->vi->height,
-            d->w, d->h, d->radius, crop_left, crop_top, crop_width, crop_height);
+            d->w, d->h, radius, crop_left, crop_top, crop_width, crop_height);
 
         if (d->vi->format->numPlanes > 1)
         {
             d->out_u = new EWAPixelCoeff();
             d->out_v = new EWAPixelCoeff();
 
-            int width_uv = d->vi->format->subSamplingW;
-            int height_uv = d->vi->format->subSamplingH;
-            double div_w = 1 << width_uv;
-            double div_h = 1 << height_uv;
+            int sub_w = d->vi->format->subSamplingW;
+            int sub_h = d->vi->format->subSamplingH;
+            double div_w = 1 << sub_w;
+            double div_h = 1 << sub_h;
 
-            generate_coeff_table_c(d->init_lut, d->out_u, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
-                d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
-            generate_coeff_table_c(d->init_lut, d->out_v, quantize_x, quantize_y, d->vi->width >> width_uv, d->vi->height >> height_uv,
-                d->w >> width_uv, d->h >> height_uv, d->radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
+            generate_coeff_table_c(d->init_lut, d->out_u, quantize_x, quantize_y, d->vi->width >> sub_w, d->vi->height >> sub_h,
+                d->w >> sub_w, d->h >> sub_h, radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
+            generate_coeff_table_c(d->init_lut, d->out_v, quantize_x, quantize_y, d->vi->width >> sub_w, d->vi->height >> sub_h,
+                d->w >> sub_w, d->h >> sub_h, radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
         }
     }
     catch (const std::string & error)

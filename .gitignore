@@ -341,3 +341,6 @@ build/
 
 # Linux build
 *.so
+
+# Other
+*.7z
