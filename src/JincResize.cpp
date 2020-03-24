@@ -51,11 +51,11 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
         else
         {
             if (plane == 0)
-                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, 65536); // any number more than 65535 is OK
+                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
             else if (plane == 1)
-                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, 65536); // only distinguish 32bit and 8-16bit
+                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
             else if (plane == 2)
-                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, 65536);
+                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
         }
     }
 }
@@ -145,13 +145,13 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             blur = blur * scale;
         }
 
-        double crop_top = vsapi->propGetFloat(in, "crop_top", 0, &err);
-        if (err)
-            crop_top = 0.0;
-
         double crop_left = vsapi->propGetFloat(in, "crop_left", 0, &err);
         if (err)
             crop_left = 0.0;
+
+        double crop_top = vsapi->propGetFloat(in, "crop_top", 0, &err);
+        if (err)
+            crop_top = 0.0;
 
         double crop_width = vsapi->propGetFloat(in, "crop_width", 0, &err);
         if (err)
@@ -162,7 +162,6 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             crop_height = (double)d->vi->height;
 
         int samples = 1024;  // should be a multiple of 4
-
         int quantize_x = 256;
         int quantize_y = 256;
 
@@ -170,7 +169,7 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         d->init_lut->InitLut(samples, radius, blur);
         d->out_y = new EWAPixelCoeff();
 
-        generate_coeff_table_c(d->init_lut, d->out_y, quantize_x, quantize_y, d->vi->width, d->vi->height,
+        generate_coeff_table_c(d->init_lut, d->out_y, quantize_x, quantize_y, samples, d->vi->width, d->vi->height,
             d->w, d->h, radius, crop_left, crop_top, crop_width, crop_height);
 
         if (d->vi->format->numPlanes > 1)
@@ -183,9 +182,9 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             double div_w = 1 << sub_w;
             double div_h = 1 << sub_h;
 
-            generate_coeff_table_c(d->init_lut, d->out_u, quantize_x, quantize_y, d->vi->width >> sub_w, d->vi->height >> sub_h,
+            generate_coeff_table_c(d->init_lut, d->out_u, quantize_x, quantize_y, samples, d->vi->width >> sub_w, d->vi->height >> sub_h,
                 d->w >> sub_w, d->h >> sub_h, radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
-            generate_coeff_table_c(d->init_lut, d->out_v, quantize_x, quantize_y, d->vi->width >> sub_w, d->vi->height >> sub_h,
+            generate_coeff_table_c(d->init_lut, d->out_v, quantize_x, quantize_y, samples, d->vi->width >> sub_w, d->vi->height >> sub_h,
                 d->w >> sub_w, d->h >> sub_h, radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
         }
     }

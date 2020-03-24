@@ -58,7 +58,7 @@ void delete_coeff_table(EWAPixelCoeff* out)
 
 /* Coefficient table generation */
 void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int quantize_y,
-    int src_width, int src_height, int dst_width, int dst_height, double radius,
+    int samples, int src_width, int src_height, int dst_width, int dst_height, double radius,
     double crop_left, double crop_top, double crop_width, double crop_height)
 {
     const double filter_scale_x = (double)dst_width / crop_width;
@@ -184,7 +184,7 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
                         const float dx = (current_x - window_x) * filter_step_x;
                         const float dy = (current_y - window_y) * filter_step_y;
                         const float dist = dx * dx + dy * dy;
-                        double index_d = round((1024 - 1) * dist / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
+                        double index_d = round((samples - 1) * dist / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
                         int index = *reinterpret_cast<int*>(&index_d);
 
                         const float factor = func->GetFactor(index);
@@ -235,6 +235,7 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
 }
 
 /* Planar resampling with coeff table */
+/* 8-16 bit */
 //#pragma intel optimization_parameter target_arch=sse
 template<typename T>
 void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
@@ -260,10 +261,42 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
                 src_ptr += src_stride;
             }
 
-            if (peak < 65536)
-                dstp[x] = (T)clamp(result, 0.f, peak + 1.f);
-            else
-                dstp[x] = clamp(result, -1.f, 1.f);
+            dstp[x] = (T)clamp(result, 0.f, peak + 1.f);
+
+            meta++;
+        }
+
+        dstp += dst_stride;
+    }
+}
+
+/* Planar resampling with coeff table */
+/* 32 bit */
+template<typename T>
+void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
+    int dst_width, int dst_height, int src_stride, int dst_stride)
+{
+    EWAPixelCoeffMeta* meta = coeff->meta;
+
+    for (int y = 0; y < dst_height; y++)
+    {
+        for (int x = 0; x < dst_width; x++)
+        {
+            const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
+            const float* coeff_ptr = coeff->factor + meta->coeff_meta;
+
+            float result = 0.f;
+            for (int ly = 0; ly < coeff->filter_size; ly++)
+            {
+                for (int lx = 0; lx < coeff->filter_size; lx++)
+                {
+                    result += src_ptr[lx] * coeff_ptr[lx];
+                }
+                coeff_ptr += coeff->coeff_stripe;
+                src_ptr += src_stride;
+            }
+
+            dstp[x] = clamp(result, -1.f, 1.f);
 
             meta++;
         }
