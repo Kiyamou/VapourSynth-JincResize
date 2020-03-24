@@ -66,6 +66,8 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
 
     const double filter_step_x = std::min(filter_scale_x, 1.0);
     const double filter_step_y = std::min(filter_scale_y, 1.0);
+    //const double filter_step_x = filter_scale_x;
+    //const double filter_step_y = filter_scale_y;
 
     const float filter_support_x = (float)radius / filter_step_x;
     const float filter_support_y = (float)radius / filter_step_y;

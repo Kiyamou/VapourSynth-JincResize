@@ -138,12 +138,12 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         if (err)
             blur = 0.9812505644269356;
 
-        if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1)
+        /*if (d->w / d->vi->width < 1 || d->h / d->vi->height < 1)
         {
             double scale = std::min((double)d->vi->width / d->w, (double)d->vi->height / d->h); // an ellipse would be :effort:
             radius = radius * scale;
             blur = blur * scale;
-        }
+        }*/
 
         double crop_left = vsapi->propGetFloat(in, "crop_left", 0, &err);
         if (err)
