@@ -96,8 +96,6 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
     // Use to advance the coeff pointer
     const int coeff_per_pixel = out->coeff_stripe * filter_size;
 
-    const bool is_quantizing = (quantize_x * quantize_y) > 0;
-
     for (int y = 0; y < dst_height; y++)
     {
         for (int x = 0; x < dst_width; x++)
