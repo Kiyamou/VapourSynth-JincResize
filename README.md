@@ -83,8 +83,8 @@ dst = haf.HQDeringmod(dst)
 
 ### Windows
 
-```
-x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O2 -march=native JincResize.cpp -o JincResize.dll
+```bash
+x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O3 -march=native JincResize.cpp -o JincResize.dll
 ```
 
 `VapourSynth.h` and `VSHelper.h` is need. You can get them from [here](https://github.com/vapoursynth/vapoursynth/tree/master/include) or your VapourSynth installation directory (`VapourSynth/sdk/include/vapoursynth`).
@@ -98,7 +98,7 @@ ninja -C build
 or dircetly
 
 ```bash
-g++ -shared -fPIC -std=c++17 -O2 -march=native JincResize.cpp -o JincResize.so
+g++ -shared -fPIC -std=c++17 -O3 -march=native JincResize.cpp -o JincResize.so
 ```
 
 ## Acknowledgement
