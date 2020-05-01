@@ -1,10 +1,6 @@
 #ifndef LUT_HPP_
 #define LUT_HPP_
 
-#if !defined(_MSC_VER)
-#include "immintrin.h"
-#endif
-
 #include "Helper.hpp"
 #include "JincFunc.hpp"
 
@@ -31,10 +27,10 @@ private:
 
 Lut::Lut()
 {
-#if defined(_MSC_VER)
-    lut = new double[lut_size];
-#else
+#if defined(USE_AVX2)
     lut = (double*)_mm_malloc(sizeof(double) * lut_size, 64);
+#else
+    lut = new double[lut_size];
 #endif
 }
 
@@ -43,15 +39,7 @@ void Lut::InitLut(int lut_size, double radius, double blur)
     auto radius2 = radius * radius;
     auto blur2 = blur * blur;
 
-#if defined(_MSC_VER)
-    for (auto i = 0; i < lut_size; ++i)
-    {
-        auto t2 = i / (lut_size - 1.0);
-        double filter = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
-        double window = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
-        lut[i] = filter * window;
-    }
-#else
+#if defined(USE_AVX2)
     double* filters = (double *)_mm_malloc(sizeof(double) * lut_size, 64);
     double* windows = (double *)_mm_malloc(sizeof(double) * lut_size, 64);
     for (auto i = 0; i < lut_size; i++)
@@ -69,15 +57,23 @@ void Lut::InitLut(int lut_size, double radius, double blur)
     }
     _mm_free(filters);
     _mm_free(windows);
+#else
+    for (auto i = 0; i < lut_size; ++i)
+    {
+        auto t2 = i / (lut_size - 1.0);
+        double filter = sample_sqr(jinc_sqr, radius2 * t2, blur2, radius2);
+        double window = sample_sqr(jinc_sqr, JINC_ZERO_SQR * t2, 1.0, radius2);
+        lut[i] = filter * window;
+    }
 #endif
 }
 
 void Lut::DestroyLutTable()
 {
-#if defined(_MSC_VER)
-    delete[] lut;
-#else
+#if defined(USE_AVX2)
     _mm_free(lut);
+#else
+    delete[] lut;
 #endif
 }
 

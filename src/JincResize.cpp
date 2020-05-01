@@ -41,40 +41,52 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
 
         if (d->vi->format->bytesPerSample <= 2)
         {
- #if !defined(_MSC_VER)
-            if (plane == 0)
-                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-            else if (plane == 1)
-                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-            else if (plane == 2)
-                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);        
-#else
+#if defined(USE_AVX2)
             if (plane == 0)
                 resize_plane_avx2(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 1)
                 resize_plane_avx2(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 2)
-                resize_plane_avx2(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-#endif
-        }
-        else
-        {
-#if !defined(_MSC_VER)
-            if (plane == 0)
-                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
-            else if (plane == 1)
-                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
-            else if (plane == 2)
-                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);        
+                resize_plane_avx2(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);       
 #else
             if (plane == 0)
-                resize_plane_avx2(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 1)
-                resize_plane_avx2(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 2)
-                resize_plane_avx2(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
 #endif
         }
+    }
+}
+
+static void process_float(const VSFrameRef* src, VSFrameRef* dst, const FilterData* const VS_RESTRICT d, const VSAPI* vsapi) noexcept
+{
+    for (int plane = 0; plane < d->vi->format->numPlanes; plane++)
+    {
+        const float* srcp = reinterpret_cast<const float*>(vsapi->getReadPtr(src, plane));
+        float* VS_RESTRICT dstp = reinterpret_cast<float*>(vsapi->getWritePtr(dst, plane));
+        int src_stride = vsapi->getStride(src, plane) / sizeof(float);
+        int dst_stride = vsapi->getStride(dst, plane) / sizeof(float);
+
+        int dst_width = vsapi->getFrameWidth(dst, plane);
+        int dst_height = vsapi->getFrameHeight(dst, plane);
+
+#if defined(USE_AVX2)
+        if (plane == 0)
+            resize_plane_avx2(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+        else if (plane == 1)
+            resize_plane_avx2(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+        else if (plane == 2)
+             resize_plane_avx2(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+#else
+        if (plane == 0)
+            resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+        else if (plane == 1)
+            resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+        else if (plane == 2)
+            resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+#endif
     }
 }
 
@@ -97,7 +109,7 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
         else if (d->vi->format->bytesPerSample == 2)
             process<uint16_t>(src, dst, d, vsapi);
         else
-            process<float>(src, dst, d, vsapi);
+            process_float(src, dst, d, vsapi);
 
         vsapi->freeFrame(src);
         return dst;

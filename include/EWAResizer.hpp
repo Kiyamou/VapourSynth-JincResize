@@ -31,7 +31,7 @@ static void init_coeff_table(EWAPixelCoeff* out, int quantize_x, int quantize_y,
     out->meta = new EWAPixelCoeffMeta[dst_width * dst_height];
 
     // Alocate factor map
-    if (quantize_x * quantize_y > 0)
+    if (quantize_x > 0 && quantize_y > 0)
         out->factor_map = new int[quantize_x * quantize_y];
     else
         out->factor_map = nullptr;
@@ -104,8 +104,8 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
 
             // Here, the window_*** variable specified a begin/size/end
             // of EWA window to process.
-            int window_end_x = int(xpos + filter_support);
-            int window_end_y = int(ypos + filter_support);
+            int window_end_x = (int)(xpos + filter_support);
+            int window_end_y = (int)(ypos + filter_support);
 
             if (window_end_x >= src_width)
             {
@@ -136,12 +136,12 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
             meta->start_y = window_begin_y;
 
             // Quantize xpos and ypos
-            const int quantized_x_int = int((double)xpos * quantize_x + 0.5);
-            const int quantized_y_int = int((double)ypos * quantize_y + 0.5);
+            const int quantized_x_int = (int)((double)xpos * quantize_x + 0.5);
+            const int quantized_y_int = (int)((double)ypos * quantize_y + 0.5);
             const int quantized_x_value = quantized_x_int % quantize_x;
             const int quantized_y_value = quantized_y_int % quantize_y;
-            const float quantized_xpos = float(quantized_x_int) / quantize_x;
-            const float quantized_ypos = float(quantized_y_int) / quantize_y;
+            const float quantized_xpos = (float)quantized_x_int / quantize_x;
+            const float quantized_ypos = (float)quantized_y_int / quantize_y;
 
             if (!is_border && out->factor_map[quantized_y_value * quantize_x + quantized_x_value] != 0)
             {
@@ -161,8 +161,8 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
                 if (!is_border)
                 {
                     // Change window position to quantized position
-                    window_begin_x = int(quantized_xpos + filter_support) - filter_size + 1;
-                    window_begin_y = int(quantized_ypos + filter_support) - filter_size + 1;
+                    window_begin_x = (int)(quantized_xpos + filter_support) - filter_size + 1;
+                    window_begin_y = (int)(quantized_ypos + filter_support) - filter_size + 1;
                 }
 
                 // Windowing positon
@@ -270,8 +270,7 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
 
 /* Planar resampling with coeff table */
 /* 32 bit */
-template<typename T>
-void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
+void resize_plane_c(EWAPixelCoeff* coeff, const float* srcp, float* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride)
 {
     EWAPixelCoeffMeta* meta = coeff->meta;
@@ -280,7 +279,7 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
     {
         for (int x = 0; x < dst_width; x++)
         {
-            const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
+            const float* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
             const float* coeff_ptr = coeff->factor + meta->coeff_meta;
 
             float result = 0.f;
@@ -303,7 +302,7 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
     }
 }
 
-#if !defined(_MSC_VER)
+#if defined(USE_AVX2)
 /* Planar resampling with coeff table */
 /* 8-16 bit */
 template <typename T>
@@ -325,7 +324,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRIC
             {
                 for (int lx = 0; lx < coeff->filter_size / 8; lx++)
                 {
-                    auto rsrc = _mm256_loadu_ps(static_cast<const float*>(src_ptr + lx * 8));
+                    auto rsrc = _mm256_loadu_ps(reinterpret_cast<const float*>(src_ptr + lx * 8));
                     auto rcof = _mm256_load_ps(coeff_ptr + lx * 8);
                     rres = _mm256_fmadd_ps(rsrc, rcof, rres);
                 }
@@ -347,8 +346,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRIC
 
 /* Planar resampling with coeff table */
 /* 32 bit */
-template <typename T>
-static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
+static void resize_plane_avx2(EWAPixelCoeff* coeff, const float* srcp, float* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride)
 {
     EWAPixelCoeffMeta* meta = coeff->meta;
@@ -357,7 +355,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRIC
     {
         for (int x = 0; x < dst_width; x++)
         {
-            const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
+            const float* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
             const float* coeff_ptr = coeff->factor + meta->coeff_meta;
 
             float result = 0.f;
