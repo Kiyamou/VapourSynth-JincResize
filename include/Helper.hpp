@@ -31,4 +31,17 @@ double sample_sqr(double (*filter)(double), double x2, double blur2, double radi
     return 0.0;
 }
 
+#if !defined(_MSC_VER)
+// by Z boson
+// https://stackoverflow.com/questions/13879609/horizontal-sum-of-8-packed-32bit-floats/18616679#18616679
+inline float reduce(__m256 a)
+{
+	__m256 t1 = _mm256_hadd_ps(a, a);
+	__m256 t2 = _mm256_hadd_ps(t1, t1);
+	__m128 t3 = _mm256_extractf128_ps(t2, 1);
+	__m128 t4 = _mm_add_ss(_mm256_castps256_ps128(t2), t3);
+	return _mm_cvtss_f32(t4);        
+}
+#endif
+
 #endif

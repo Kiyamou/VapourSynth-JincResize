@@ -50,12 +50,21 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
         }
         else
         {
+#if !defined(_MSC_VER)
             if (plane == 0)
                 resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
             else if (plane == 1)
                 resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
             else if (plane == 2)
-                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);        
+#else
+            if (plane == 0)
+                resize_plane_avx2(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+            else if (plane == 1)
+                resize_plane_avx2(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+            else if (plane == 2)
+                resize_plane_avx2(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride);
+#endif
         }
     }
 }
