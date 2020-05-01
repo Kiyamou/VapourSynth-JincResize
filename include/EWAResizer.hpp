@@ -304,8 +304,51 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
 }
 
 #if !defined(_MSC_VER)
+/* Planar resampling with coeff table */
+/* 8-16 bit */
 template <typename T>
-static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* src, T* VS_RESTRICT dst,
+static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
+    int dst_width, int dst_height, int src_stride, int dst_stride, int peak)
+{
+    EWAPixelCoeffMeta* meta = coeff->meta;
+
+    for (int y = 0; y < dst_height; y++)
+    {
+        for (int x = 0; x < dst_width; x++)
+        {
+            const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
+            const float* coeff_ptr = coeff->factor + meta->coeff_meta;
+
+            float result = 0.f;
+            auto rres = _mm256_setzero_ps();
+            for (int ly = 0; ly < coeff->filter_size; ly++)
+            {
+                for (int lx = 0; lx < coeff->filter_size / 8; lx++)
+                {
+                    auto rsrc = _mm256_loadu_ps(static_cast<const float*>(src_ptr + lx * 8));
+                    auto rcof = _mm256_load_ps(coeff_ptr + lx * 8);
+                    rres = _mm256_fmadd_ps(rsrc, rcof, rres);
+                }
+                for (int lx = coeff->filter_size - coeff->filter_size % 8; lx < coeff->filter_size; ++lx)
+                {
+                    result += src_ptr[lx] * coeff_ptr[lx];
+                }
+                coeff_ptr += coeff->coeff_stripe;
+                src_ptr += src_stride;
+            }
+            result += reduce(rres);
+            dstp[x] = static_cast<T>(clamp(result, 0.f, peak + 1.f));
+
+            ++meta;
+        }
+        dstp += dst_stride;
+    }
+}
+
+/* Planar resampling with coeff table */
+/* 32 bit */
+template <typename T>
+static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride)
 {
     EWAPixelCoeffMeta* meta = coeff->meta;
@@ -314,7 +357,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* src, T* VS_RESTRICT
     {
         for (int x = 0; x < dst_width; x++)
         {
-            const T* src_ptr = src + meta->start_y * src_stride + meta->start_x;
+            const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
             const float* coeff_ptr = coeff->factor + meta->coeff_meta;
 
             float result = 0.f;
@@ -335,11 +378,11 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* src, T* VS_RESTRICT
                 src_ptr += src_stride;
             }
             result += reduce(rres);
-            dst[x] = clamp(result, -1.f, 1.f);
+            dstp[x] = clamp(result, -1.f, 1.f);
 
             ++meta;
         }
-        dst += dst_stride;
+        dstp += dst_stride;
     }
 }
 #endif
