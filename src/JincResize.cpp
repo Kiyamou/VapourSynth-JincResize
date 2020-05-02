@@ -178,11 +178,11 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 
         double crop_width = vsapi->propGetFloat(in, "crop_width", 0, &err);
         if (err)
-            crop_width = (double)d->vi->width;
+            crop_width = static_cast<double>(d->vi->width);
 
         double crop_height = vsapi->propGetFloat(in, "crop_height", 0, &err);
         if (err)
-            crop_height = (double)d->vi->height;
+            crop_height = static_cast<double>(d->vi->height);
 
         int samples = 1024;  // should be a multiple of 4
         int quantize_x = 256;
@@ -202,8 +202,8 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
 
             int sub_w = d->vi->format->subSamplingW;
             int sub_h = d->vi->format->subSamplingH;
-            double div_w = 1 << sub_w;
-            double div_h = 1 << sub_h;
+            double div_w = static_cast<double>(1 << sub_w);
+            double div_h = static_cast<double>(1 << sub_h);
 
             generate_coeff_table_c(d->init_lut, d->out_u, quantize_x, quantize_y, samples, d->vi->width >> sub_w, d->vi->height >> sub_h,
                 d->w >> sub_w, d->h >> sub_h, radius, crop_left / div_w, crop_top / div_h, crop_width / div_w, crop_height / div_h);
