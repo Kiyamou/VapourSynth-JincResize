@@ -259,7 +259,7 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
                 src_ptr += src_stride;
             }
 
-            dstp[x] = static_cast<T>(clamp(result, 0.f, peak + 1.f));
+            dstp[x] = static_cast<T>(clamp(result, 0.f, (float)peak));
 
             meta++;
         }
@@ -336,7 +336,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRIC
                 src_ptr += src_stride;
             }
             result += reduce(rres);
-            dstp[x] = static_cast<T>(clamp(result, 0.f, peak + 1.f));
+            dstp[x] = static_cast<T>(clamp(result, 0.f, (float)peak));
 
             ++meta;
         }
