@@ -13,8 +13,8 @@ If want to learn more about Jinc, you can read the [post](https://zhuanlan.zhihu
 ## Usage
 
 ```python
-core.jinc.JincResize(clip clip, int width, int height[, float crop_left, float crop_top,
-                     float crop_width, float crop_height, int tap, float blur])
+core.jinc.JincResize(clip clip, int width, int height[, int tap, float crop_left, float crop_top,
+                     float crop_width, float crop_height, float blur])
 ```
 
 * ***clip***
