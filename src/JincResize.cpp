@@ -27,7 +27,7 @@ static void VS_CC filterInit(VSMap* in, VSMap* out, void** instanceData, VSNode*
 }
 
 template<typename T>
-static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* const VS_RESTRICT d, const VSAPI* vsapi) noexcept
+static void process_uint(const VSFrameRef* src, VSFrameRef* dst, const FilterData* const VS_RESTRICT d, const VSAPI* vsapi) noexcept
 {
     for (int plane = 0; plane < d->vi->format->numPlanes; plane++)
     {
@@ -41,21 +41,12 @@ static void process(const VSFrameRef* src, VSFrameRef* dst, const FilterData* co
 
         if (d->vi->format->bytesPerSample <= 2)
         {
-#if defined(USE_AVX2)
-            if (plane == 0)
-                resize_plane_avx2(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-            else if (plane == 1)
-                resize_plane_avx2(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-            else if (plane == 2)
-                resize_plane_avx2(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);       
-#else
             if (plane == 0)
                 resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 1)
                 resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
             else if (plane == 2)
                 resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-#endif
         }
     }
 }
@@ -105,9 +96,9 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
         VSFrameRef* dst = vsapi->newVideoFrame(d->vi->format, d->w, d->h, src, core);
 
         if (d->vi->format->bytesPerSample == 1)
-            process<uint8_t>(src, dst, d, vsapi);
+            process_uint<uint8_t>(src, dst, d, vsapi);
         else if (d->vi->format->bytesPerSample == 2)
-            process<uint16_t>(src, dst, d, vsapi);
+            process_uint<uint16_t>(src, dst, d, vsapi);
         else
             process_float(src, dst, d, vsapi);
 

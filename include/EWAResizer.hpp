@@ -305,7 +305,7 @@ void resize_plane_c(EWAPixelCoeff* coeff, const float* srcp, float* VS_RESTRICT 
 #if defined(USE_AVX2)
 /* Planar resampling with coeff table */
 /* 8-16 bit */
-template <typename T>
+/*template <typename T>
 static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride, int peak)
 {
@@ -342,7 +342,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRIC
         }
         dstp += dst_stride;
     }
-}
+}*/
 
 /* Planar resampling with coeff table */
 /* 32 bit */

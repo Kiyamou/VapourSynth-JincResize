@@ -17,7 +17,7 @@
 #ifndef HELPER_HPP_
 #define HELPER_HPP_
 
-#define USE_AVX2
+//#define USE_AVX2
 
 #include <algorithm>
 
