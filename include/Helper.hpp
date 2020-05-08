@@ -17,10 +17,7 @@
 #ifndef HELPER_HPP_
 #define HELPER_HPP_
 
-// For simplicity, only use AVX2 with GCC compiler
-#if !defined(_MSC_VER)
 #define USE_AVX2
-#endif
 
 #include <algorithm>
 
