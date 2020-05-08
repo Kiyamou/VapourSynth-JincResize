@@ -23,6 +23,7 @@
     <ClInclude Include="..\include\EWAResizer.hpp" />
     <ClInclude Include="..\include\Helper.hpp" />
     <ClInclude Include="..\include\JincFunc.hpp" />
+    <ClInclude Include="..\include\Lut.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\JincResize.cpp" />
