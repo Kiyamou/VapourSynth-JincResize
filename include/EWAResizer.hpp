@@ -25,7 +25,7 @@ static void init_coeff_table(EWAPixelCoeff* out, int quantize_x, int quantize_y,
     out->filter_size = filter_size;
     out->quantize_x = quantize_x;
     out->quantize_y = quantize_y;
-    out->coeff_stripe = ((filter_size + 7) / 8) * 8;
+    out->coeff_stride = ((filter_size + 7) / 8) * 8;
 
     // Allocate metadata
     out->meta = new EWAPixelCoeffMeta[dst_width * dst_height];
@@ -92,7 +92,7 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
     int tmp_array_top = 0;
 
     // Use to advance the coeff pointer
-    const int coeff_per_pixel = out->coeff_stripe * filter_size;
+    const int coeff_per_pixel = out->coeff_stride * filter_size;
 
     for (int y = 0; y < dst_height; y++)
     {
@@ -193,7 +193,7 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
                         window_x++;
                     }
 
-                    curr_factor_ptr += out->coeff_stripe;
+                    curr_factor_ptr += out->coeff_stride;
 
                     window_x = window_begin_x;
                     window_y++;
@@ -208,7 +208,7 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
                         tmp_array[curr_factor_ptr + lx] /= divider;
                     }
 
-                    curr_factor_ptr += out->coeff_stripe;
+                    curr_factor_ptr += out->coeff_stride;
                 }
 
                 // Save factor to table
@@ -255,7 +255,7 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
                 {
                     result += src_ptr[lx] * coeff_ptr[lx];
                 }
-                coeff_ptr += coeff->coeff_stripe;
+                coeff_ptr += coeff->coeff_stride;
                 src_ptr += src_stride;
             }
 
@@ -289,7 +289,7 @@ void resize_plane_c(EWAPixelCoeff* coeff, const float* srcp, float* VS_RESTRICT 
                 {
                     result += src_ptr[lx] * coeff_ptr[lx];
                 }
-                coeff_ptr += coeff->coeff_stripe;
+                coeff_ptr += coeff->coeff_stride;
                 src_ptr += src_stride;
             }
 
@@ -332,7 +332,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRIC
                 {
                     result += src_ptr[lx] * coeff_ptr[lx];
                 }
-                coeff_ptr += coeff->coeff_stripe;
+                coeff_ptr += coeff->coeff_stride;
                 src_ptr += src_stride;
             }
             result += reduce(rres);
@@ -372,7 +372,7 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const float* srcp, float* VS
                 {
                     result += src_ptr[lx] * coeff_ptr[lx];
                 }
-                coeff_ptr += coeff->coeff_stripe;
+                coeff_ptr += coeff->coeff_stride;
                 src_ptr += src_stride;
             }
             result += reduce(rres);
