@@ -176,8 +176,13 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
             crop_height = static_cast<double>(d->vi->height);
 
         int samples = 1024;  // should be a multiple of 4
-        int quantize_x = 256;
-        int quantize_y = 256;
+
+        int quantize_x = int64ToIntS(vsapi->propGetInt(in, "quant_x", 0, &err));
+        if (err)
+            quantize_x = 256;
+        int quantize_y = int64ToIntS(vsapi->propGetInt(in, "quant_y", 0, &err));
+        if (err)
+            quantize_y = 256;
 
         d->init_lut = new Lut();
         d->init_lut->InitLut(samples, radius, blur);
@@ -225,6 +230,8 @@ VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegiste
         "crop_left:float:opt;"
         "crop_width:float:opt;"
         "crop_height:float:opt;"
+        "quant_x:int:opt;"
+        "quant_y:int:opt;"
         "blur:float:opt",
         filterCreate, 0, plugin);
 }

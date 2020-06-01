@@ -154,7 +154,7 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
                 float divider = 0.f;
 
                 // This is the location of current target pixel in source pixel
-                // Qunatized
+                // Quantized
                 const float current_x = clamp(is_border ? xpos : quantized_xpos, 0.f, src_width - 1.f);
                 const float current_y = clamp(is_border ? ypos : quantized_ypos, 0.f, src_height - 1.f);
 
