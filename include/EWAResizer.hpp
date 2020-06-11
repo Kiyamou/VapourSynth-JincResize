@@ -3,6 +3,7 @@
 *
 *                 port from AviSynth jinc-resize, origin repo:
 *    https://github.com/AviSynth/jinc-resize/blob/master/JincResize/EWAResizer.h
+*  https://github.com/AviSynth/jinc-resize/blob/master/JincResize/EWAResizerStruct.h
 */
 
 
@@ -14,10 +15,23 @@
 #include "vapoursynth/VapourSynth.h"
 #include "vapoursynth/VSHelper.h"
 
-#include "EWAResizer.h"
 #include "Lut.hpp"
 
 constexpr double DOUBLE_ROUND_MAGIC_NUMBER = 6755399441055744.0;
+
+struct EWAPixelCoeffMeta
+{
+    int start_x, start_y;
+    int coeff_meta;
+};
+
+struct EWAPixelCoeff
+{
+    float* factor;
+    EWAPixelCoeffMeta* meta;
+    int* factor_map;
+    int filter_size, quantize_x, quantize_y, coeff_stride;
+};
 
 static void init_coeff_table(EWAPixelCoeff* out, int quantize_x, int quantize_y,
     int filter_size, int dst_width, int dst_height)
