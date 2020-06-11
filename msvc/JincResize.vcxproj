@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\EWAResizer.h" />
     <ClInclude Include="..\include\EWAResizer.hpp" />
     <ClInclude Include="..\include\Helper.hpp" />
     <ClInclude Include="..\include\JincFunc.hpp" />

@@ -21,9 +21,6 @@
     <ClInclude Include="..\include\JincFunc.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\EWAResizer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\EWAResizer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
