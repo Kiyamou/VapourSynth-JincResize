@@ -159,19 +159,19 @@ static void VS_CC filterCreate(const VSMap* in, VSMap* out, void* userData, VSCo
         if (err)
             blur = 0.9812505644269356;
 
-        double crop_left = vsapi->propGetFloat(in, "crop_left", 0, &err);
+        double crop_left = vsapi->propGetFloat(in, "src_left", 0, &err);
         if (err)
             crop_left = 0.0;
 
-        double crop_top = vsapi->propGetFloat(in, "crop_top", 0, &err);
+        double crop_top = vsapi->propGetFloat(in, "src_top", 0, &err);
         if (err)
             crop_top = 0.0;
 
-        double crop_width = vsapi->propGetFloat(in, "crop_width", 0, &err);
+        double crop_width = vsapi->propGetFloat(in, "src_width", 0, &err);
         if (err)
             crop_width = static_cast<double>(d->vi->width);
 
-        double crop_height = vsapi->propGetFloat(in, "crop_height", 0, &err);
+        double crop_height = vsapi->propGetFloat(in, "src_height", 0, &err);
         if (err)
             crop_height = static_cast<double>(d->vi->height);
 
@@ -226,10 +226,10 @@ VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegiste
         "width:int;"
         "height:int;"
         "tap:int:opt;"
-        "crop_top:float:opt;"
-        "crop_left:float:opt;"
-        "crop_width:float:opt;"
-        "crop_height:float:opt;"
+        "src_left:float:opt;"
+        "src_top:float:opt;"
+        "src_width:float:opt;"
+        "src_height:float:opt;"
         "quant_x:int:opt;"
         "quant_y:int:opt;"
         "blur:float:opt",

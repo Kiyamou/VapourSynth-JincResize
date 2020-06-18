@@ -13,8 +13,8 @@ If want to learn more about Jinc, you can read the [post](https://zhuanlan.zhihu
 ## Usage
 
 ```python
-core.jinc.JincResize(clip clip, int width, int height[, int tap, float crop_left, float crop_top,
-                     float crop_width, float crop_height, float blur])
+core.jinc.JincResize(clip clip, int width, int height[, int tap, float src_left, float src_top,
+                     float src_width, float src_height, int quant_x, int quant_y, float blur])
 ```
 
 * ***clip***
@@ -31,18 +31,24 @@ core.jinc.JincResize(clip clip, int width, int height[, int tap, float crop_left
     * Optional parameter. Range: 1–16. *Default: 3*.
     * Corresponding to different zero points of Jinc function.
     * The recommended value is 3, 4, 6, 8, which is similar to the [AviSynth plugin](https://github.com/AviSynth/jinc-resize),  ` Jinc36Resize `, ` Jinc64Resize `, ` Jinc128Resize `, ` Jinc256Resize `.
-* ***crop_left***
+* ***src_left***
   * Optional parameter. *Default: 0.0*.
-  * Same as `src_left` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
-* ***crop_top***
+  * Cropping of the left edge respectively, in pixels, before resizing.
+* ***src_top***
   * Optional parameter. *Default: 0.0*.
-  * Same as `src_top` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
-* ***crop_width***
+  * Cropping of the top edge respectively, in pixels, before resizing.
+* ***src_width***
   * Optional parameter. *Default: the width of input*.
-  * Same as `src_width` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
-* ***crop_height***
+  * If  > 0, setting the width of the clip before resizing.
+  * If <= 0, setting the cropping of the right edge respectively, before resizing.
+* ***src_height***
   * Optional parameter. *Default: the height of input*.
-  * Same as `src_height` in [AviSynth](http://avisynth.nl/index.php/Resize#Common_Parameters).
+  * If  > 0, setting the height of the clip before resizing.
+  * If <= 0, setting the cropping of the bottom edge respectively, before resizing.
+* ***quant_x***
+* ***quant_y***
+  * Optional parameter. *Default: 256*.
+  * Controls sub-pixel quantization.
 * ***blur***
     * Optional parameter. *Default: 0.9812505644269356*.
     * Blur processing, it can reduce side effects.
