@@ -39,15 +39,12 @@ static void process_uint(const VSFrameRef* src, VSFrameRef* dst, const FilterDat
         int dst_width = vsapi->getFrameWidth(dst, plane);
         int dst_height = vsapi->getFrameHeight(dst, plane);
 
-        if (d->vi->format->bytesPerSample <= 2)
-        {
-            if (plane == 0)
-                resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-            else if (plane == 1)
-                resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-            else if (plane == 2)
-                resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
-        }
+        if (plane == 0)
+            resize_plane_c(d->out_y, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
+        else if (plane == 1)
+            resize_plane_c(d->out_u, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
+        else if (plane == 2)
+            resize_plane_c(d->out_v, srcp, dstp, dst_width, dst_height, src_stride, dst_stride, d->peak);
     }
 }
 
