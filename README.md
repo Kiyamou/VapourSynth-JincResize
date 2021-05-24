@@ -1,6 +1,6 @@
 # VapourSynth-JincResize
 
-[![Build Status](https://api.travis-ci.org/Kiyamou/VapourSynth-JincResize.svg?branch=master)](https://travis-ci.org/github/Kiyamou/VapourSynth-JincResize)
+[![Build Status](https://github.com/Kiyamou/VapourSynth-JincResize/workflows/CI/badge.svg)](https://github.com/Kiyamou/VapourSynth-JincResize/actions)
 
 ## Description
 
@@ -84,7 +84,7 @@ x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O3 -march=native JincResize.c
 meson build
 ninja -C build
 ```
-or dircetly
+or directly
 
 ```bash
 g++ -shared -fPIC -std=c++17 -O3 -march=native JincResize.cpp -o JincResize.so
