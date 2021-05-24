@@ -24,7 +24,5 @@ jobs:
           mv vapoursynth-R53/include/VSHelper.h include/vapoursynth/VSHelper.h
           
       - name: build
-        run: |
-          meson build
-          ninja -C build
+        run: g++ -shared -fPIC -std=c++17 -O3 -march=native JincResize.cpp -o JincResize.so
 
