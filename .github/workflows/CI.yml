@@ -19,6 +19,9 @@ on:
       - '**/LICENSE'
       - '**.md'
 
+env:
+  VAPOURSYNTH_VERSION: R53
+
 jobs:
 
   build:
@@ -30,11 +33,11 @@ jobs:
       
       - name: configure
         run: |
-          wget https://github.com/vapoursynth/vapoursynth/archive/refs/tags/R53.tar.gz
-          tar -xzvf R53.tar.gz vapoursynth-R53/include
+          wget https://github.com/vapoursynth/vapoursynth/archive/refs/tags/${{env.VAPOURSYNTH_VERSION}}.tar.gz
+          tar -xzvf ${{env.VAPOURSYNTH_VERSION}}.tar.gz vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include
           mkdir include/vapoursynth
-          mv vapoursynth-R53/include/VapourSynth.h include/vapoursynth/VapourSynth.h
-          mv vapoursynth-R53/include/VSHelper.h include/vapoursynth/VSHelper.h
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VapourSynth.h include/vapoursynth/VapourSynth.h
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VSHelper.h include/vapoursynth/VSHelper.h
           
       - name: build
         run: g++ -shared -fPIC -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.so
