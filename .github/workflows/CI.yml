@@ -42,6 +42,15 @@ jobs:
       - name: build
         run: g++ -shared -fPIC -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.so
 
+      - name: strip
+        run: strip JincResize.so
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-vapoursynth-jincresize
+          path: JincResize.so
+
   build-windows:
 
     runs-on: windows-latest
@@ -59,3 +68,12 @@ jobs:
 
       - name: build
         run: x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.dll
+
+      - name: strip
+        run: strip JincResize.dll
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-vapoursynth-jincresize
+          path: JincResize.dll
