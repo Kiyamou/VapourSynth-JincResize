@@ -20,7 +20,7 @@ on:
       - '**.md'
 
 env:
-  VAPOURSYNTH_VERSION: R53
+  VAPOURSYNTH_VERSION: R61
 
 jobs:
 
