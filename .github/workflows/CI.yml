@@ -24,7 +24,7 @@ env:
 
 jobs:
 
-  build:
+  build-linux:
 
     runs-on: ubuntu-latest
 
@@ -41,3 +41,21 @@ jobs:
 
       - name: build
         run: g++ -shared -fPIC -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.so
+
+  build-windows:
+
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: configure
+        run:  |
+          curl -s -L https://github.com/vapoursynth/vapoursynth/archive/refs/tags/${{env.VAPOURSYNTH_VERSION}}.tar.gz -o ${{env.VAPOURSYNTH_VERSION}}.tar.gz
+          tar -xzvf ${{env.VAPOURSYNTH_VERSION}}.tar.gz vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include
+          mkdir include/vapoursynth
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VapourSynth.h include/vapoursynth/VapourSynth.h
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VSHelper.h include/vapoursynth/VSHelper.h
+
+      - name: build
+        run: x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.dll
