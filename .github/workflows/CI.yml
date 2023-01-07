@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: configure
         run: |
           wget https://github.com/vapoursynth/vapoursynth/archive/refs/tags/${{env.VAPOURSYNTH_VERSION}}.tar.gz
@@ -38,7 +38,6 @@ jobs:
           mkdir include/vapoursynth
           mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VapourSynth.h include/vapoursynth/VapourSynth.h
           mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VSHelper.h include/vapoursynth/VSHelper.h
-          
+
       - name: build
         run: g++ -shared -fPIC -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.so
-
