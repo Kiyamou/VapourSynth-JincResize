@@ -3,26 +3,80 @@ name: CI
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - '.gitignore'
+      - '.gitattributes'
+      - '.gitmodules'
+      - '**/LICENSE'
+      - '**.md'
+
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - '.gitignore'
+      - '.gitattributes'
+      - '.gitmodules'
+      - '**/LICENSE'
+      - '**.md'
+
+  # Manual trigger
+  workflow_dispatch:
+
+env:
+  VAPOURSYNTH_VERSION: R61
 
 jobs:
 
-  build:
+  build-linux:
 
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      
+      - uses: actions/checkout@v3
+
       - name: configure
         run: |
-          wget https://github.com/vapoursynth/vapoursynth/archive/refs/tags/R53.tar.gz
-          tar -xzvf R53.tar.gz vapoursynth-R53/include
+          wget https://github.com/vapoursynth/vapoursynth/archive/refs/tags/${{env.VAPOURSYNTH_VERSION}}.tar.gz
+          tar -xzvf ${{env.VAPOURSYNTH_VERSION}}.tar.gz vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include
           mkdir include/vapoursynth
-          mv vapoursynth-R53/include/VapourSynth.h include/vapoursynth/VapourSynth.h
-          mv vapoursynth-R53/include/VSHelper.h include/vapoursynth/VSHelper.h
-          
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VapourSynth.h include/vapoursynth/VapourSynth.h
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VSHelper.h include/vapoursynth/VSHelper.h
+
       - name: build
         run: g++ -shared -fPIC -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.so
 
+      - name: strip
+        run: strip JincResize.so
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-vapoursynth-jincresize
+          path: JincResize.so
+
+  build-windows:
+
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: configure
+        run:  |
+          curl -s -L https://github.com/vapoursynth/vapoursynth/archive/refs/tags/${{env.VAPOURSYNTH_VERSION}}.tar.gz -o ${{env.VAPOURSYNTH_VERSION}}.tar.gz
+          tar -xzvf ${{env.VAPOURSYNTH_VERSION}}.tar.gz vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include
+          mkdir include/vapoursynth
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VapourSynth.h include/vapoursynth/VapourSynth.h
+          mv vapoursynth-${{env.VAPOURSYNTH_VERSION}}/include/VSHelper.h include/vapoursynth/VSHelper.h
+
+      - name: build
+        run: x86_64-w64-mingw32-g++ -shared -static -std=c++17 -O3 -march=native src/JincResize.cpp -o JincResize.dll
+
+      - name: strip
+        run: strip JincResize.dll
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-vapoursynth-jincresize
+          path: JincResize.dll
