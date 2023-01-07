@@ -19,6 +19,9 @@ on:
       - '**/LICENSE'
       - '**.md'
 
+  # Manual trigger
+  workflow_dispatch:
+
 env:
   VAPOURSYNTH_VERSION: R61
 
