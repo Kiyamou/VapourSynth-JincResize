@@ -11,13 +11,12 @@
 #define EWARESIZER_HPP_
 
 #include <vector>
+#include <memory>
 
 #include "vapoursynth/VapourSynth.h"
 #include "vapoursynth/VSHelper.h"
 
 #include "Lut.hpp"
-
-constexpr double DOUBLE_ROUND_MAGIC_NUMBER = 6755399441055744.0;
 
 struct EWAPixelCoeffMeta
 {
@@ -25,12 +24,21 @@ struct EWAPixelCoeffMeta
     int coeff_meta;
 };
 
+struct VSAlignedFree
+{
+    void operator()(float* ptr) const noexcept
+    {
+        vs_aligned_free(ptr);
+    }
+};
+
+
 struct EWAPixelCoeff
 {
-    float* factor;
-    EWAPixelCoeffMeta* meta;
-    int* factor_map;
-    int filter_size, quantize_x, quantize_y, coeff_stride;
+    std::unique_ptr<float, VSAlignedFree> factor;
+    std::vector<EWAPixelCoeffMeta> meta;
+    std::vector<int> factor_map;
+    int filter_size = 0, quantize_x = 0, quantize_y = 0, coeff_stride = 0;
 };
 
 static void init_coeff_table(EWAPixelCoeff* out, int quantize_x, int quantize_y,
@@ -42,32 +50,16 @@ static void init_coeff_table(EWAPixelCoeff* out, int quantize_x, int quantize_y,
     out->coeff_stride = ((filter_size + 7) / 8) * 8;
 
     // Allocate metadata
-    out->meta = new EWAPixelCoeffMeta[dst_width * dst_height];
+    out->meta.assign(dst_width * dst_height, EWAPixelCoeffMeta{});
 
     // Alocate factor map
     if (quantize_x > 0 && quantize_y > 0)
-        out->factor_map = new int[quantize_x * quantize_y];
+        out->factor_map.assign(quantize_x * quantize_y, 0);
     else
-        out->factor_map = nullptr;
+        out->factor_map.clear();
 
     // This will be reserved to exact size in coff generating procedure
     out->factor = nullptr;
-
-    // Zeroed memory
-    if (out->factor_map != nullptr)
-        memset(out->factor_map, 0, quantize_x * quantize_y * sizeof(int));
-
-    memset(out->meta, 0, dst_width * dst_height * sizeof(EWAPixelCoeffMeta));
-}
-
-void delete_coeff_table(EWAPixelCoeff* out)
-{
-    if(out == nullptr)
-        return;
-
-    vs_aligned_free(out->factor);
-    delete[] out->meta;
-    delete[] out->factor_map;
 }
 
 /* Coefficient table generation */
@@ -196,8 +188,7 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
                         const float dx = (current_x - window_x) * filter_step_x;
                         const float dy = (current_y - window_y) * filter_step_y;
                         const float dist = dx * dx + dy * dy;
-                        double index_d = round((samples - 1) * dist / radius2) + DOUBLE_ROUND_MAGIC_NUMBER;
-                        int index = *reinterpret_cast<int*>(&index_d);
+                        const int index = static_cast<int>(std::round((samples - 1) * dist / radius2));
 
                         const float factor = func->GetFactor(index);
 
@@ -242,8 +233,8 @@ void generate_coeff_table_c(Lut* func, EWAPixelCoeff* out, int quantize_x, int q
 
     // Copy from tmp_array to real array
     const int tmp_array_size = tmp_array.size();
-    out->factor = (float *)vs_aligned_malloc(tmp_array_size * sizeof(float), 64); // aligned to cache line
-    memcpy(out->factor, &tmp_array[0], tmp_array_size * sizeof(float));
+    out->factor.reset(static_cast<float*>(vs_aligned_malloc(tmp_array_size * sizeof(float), 64))); // aligned to cache line
+    std::copy(tmp_array.begin(), tmp_array.end(), out->factor.get());
 }
 
 /* Planar resampling with coeff table */
@@ -253,14 +244,14 @@ template<typename T>
 void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride, int peak)
 {
-    EWAPixelCoeffMeta* meta = coeff->meta;
+    EWAPixelCoeffMeta* meta = coeff->meta.data();
 
     for (int y = 0; y < dst_height; y++)
     {
         for (int x = 0; x < dst_width; x++)
         {
             const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
-            const float* coeff_ptr = coeff->factor + meta->coeff_meta;
+            const float* coeff_ptr = coeff->factor.get() + meta->coeff_meta;
 
             float result = 0.f;
             for (int ly = 0; ly < coeff->filter_size; ly++)
@@ -287,14 +278,14 @@ void resize_plane_c(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
 void resize_plane_c(EWAPixelCoeff* coeff, const float* srcp, float* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride)
 {
-    EWAPixelCoeffMeta* meta = coeff->meta;
+    EWAPixelCoeffMeta* meta = coeff->meta.data();
 
     for (int y = 0; y < dst_height; y++)
     {
         for (int x = 0; x < dst_width; x++)
         {
             const float* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
-            const float* coeff_ptr = coeff->factor + meta->coeff_meta;
+            const float* coeff_ptr = coeff->factor.get() + meta->coeff_meta;
 
             float result = 0.f;
             for (int ly = 0; ly < coeff->filter_size; ly++)
@@ -323,14 +314,14 @@ void resize_plane_c(EWAPixelCoeff* coeff, const float* srcp, float* VS_RESTRICT 
 static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride, int peak)
 {
-    EWAPixelCoeffMeta* meta = coeff->meta;
+    EWAPixelCoeffMeta* meta = coeff->meta.data();
 
     for (int y = 0; y < dst_height; y++)
     {
         for (int x = 0; x < dst_width; x++)
         {
             const T* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
-            const float* coeff_ptr = coeff->factor + meta->coeff_meta;
+            const float* coeff_ptr = coeff->factor.get() + meta->coeff_meta;
 
             float result = 0.f;
             auto rres = _mm256_setzero_ps();
@@ -363,14 +354,14 @@ static void resize_plane_avx2(EWAPixelCoeff* coeff, const T* srcp, T* VS_RESTRIC
 static void resize_plane_avx2(EWAPixelCoeff* coeff, const float* srcp, float* VS_RESTRICT dstp,
     int dst_width, int dst_height, int src_stride, int dst_stride)
 {
-    EWAPixelCoeffMeta* meta = coeff->meta;
+    EWAPixelCoeffMeta* meta = coeff->meta.data();
 
     for (int y = 0; y < dst_height; y++)
     {
         for (int x = 0; x < dst_width; x++)
         {
             const float* src_ptr = srcp + meta->start_y * src_stride + meta->start_x;
-            const float* coeff_ptr = coeff->factor + meta->coeff_meta;
+            const float* coeff_ptr = coeff->factor.get() + meta->coeff_meta;
 
             float result = 0.f;
             auto rres = _mm256_setzero_ps();
