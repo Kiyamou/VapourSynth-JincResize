@@ -21,8 +21,6 @@ public:
 
 private:
     int lut_size = 1024;
-    double radius;
-    double blur;
 };
 
 Lut::Lut()
@@ -81,7 +79,7 @@ float Lut::GetFactor(int index)
 {
     if (index >= lut_size)
         return 0.f;
-    return (float)lut[index];
+    return static_cast<float>(lut[index]);
 }
 
 #endif

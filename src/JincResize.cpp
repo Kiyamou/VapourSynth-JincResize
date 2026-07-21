@@ -123,6 +123,7 @@ static const VSFrameRef* VS_CC filterGetFrame(int n, int activationReason, void*
 static void VS_CC filterFree(void* instanceData, VSCore* core, const VSAPI* vsapi)
 {
     FilterData* d = static_cast<FilterData*>(instanceData);
+    delete d->init_lut;
     delete d;
 }
 
