@@ -10,7 +10,7 @@ class Lut
 {
 public:
     Lut();
-    ~Lut() {};
+    ~Lut() { DestroyLutTable(); }
 
     void InitLut(int lut_size, double radius, double blur);
     void DestroyLutTable();
@@ -34,6 +34,7 @@ Lut::Lut()
 
 void Lut::InitLut(int lut_size, double radius, double blur)
 {
+    this->lut_size = lut_size;
     auto radius2 = radius * radius;
     auto blur2 = blur * blur;
 
