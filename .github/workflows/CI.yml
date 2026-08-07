@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - name: configure
         run: |
@@ -49,7 +49,7 @@ jobs:
         run: strip JincResize.so
 
       - name: upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linux-vapoursynth-jincresize
           path: JincResize.so
@@ -59,7 +59,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - name: configure
         run:  |
@@ -76,7 +76,7 @@ jobs:
         run: strip JincResize.dll
 
       - name: upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: windows-vapoursynth-jincresize
           path: JincResize.dll
