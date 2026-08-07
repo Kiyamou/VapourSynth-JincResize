@@ -342,5 +342,8 @@ build/
 # Linux build
 *.so
 
+# vscode
+.vscode/
+
 # Other
 *.7z
